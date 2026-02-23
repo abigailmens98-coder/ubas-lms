@@ -21,7 +21,7 @@ export default function Login({ onLogin }: LoginProps) {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-primary-500 via-primary-600 to-purple-700 
+        <div className="min-h-screen bg-gradient-to-br from-primary-500 via-primary-600 to-primary-800 
                     flex items-center justify-center p-4 relative overflow-hidden">
             {/* Background decoration */}
             <div className="absolute inset-0">
@@ -33,12 +33,11 @@ export default function Login({ onLogin }: LoginProps) {
             <div className="relative z-10 w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 
-                          flex items-center justify-center mx-auto mb-4 shadow-lg">
-                        <span className="text-2xl font-bold text-white">U</span>
+                    <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl border-4 border-white/20 p-1.5 overflow-hidden">
+                        <img src="/badge.png" alt="UBaS Logo" className="w-full h-full object-contain hover:scale-105 transition-transform duration-300" />
                     </div>
-                    <h1 className="text-3xl font-bold text-white mb-1">UBaS LMS</h1>
-                    <p className="text-white/60 text-sm">Learning Management System</p>
+                    <h1 className="text-3xl font-bold text-white mb-1 drop-shadow-md">UBaS LMS</h1>
+                    <p className="text-white/80 font-medium text-sm drop-shadow">Learning Management System</p>
                 </div>
 
                 {/* Login Card */}

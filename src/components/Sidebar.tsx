@@ -22,15 +22,14 @@ export default function Sidebar({ user, portalLabel, navItems, onLogout }: Sideb
         <aside className="fixed left-0 top-0 bottom-0 w-[240px] bg-white border-r border-slate-100 
                        flex flex-col z-40 shadow-sidebar">
             {/* Logo Area */}
-            <div className="px-5 pt-5 pb-3">
+            <div className="px-5 pt-5 pb-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 
-                          flex items-center justify-center shadow-md">
-                        <span className="text-white font-bold text-sm">U</span>
+                    <div className="w-11 h-11 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden shrink-0">
+                        <img src="/badge.png" alt="UBaS Logo" className="w-full h-full object-contain scale-110" />
                     </div>
                     <div>
                         <h1 className="text-base font-bold text-slate-800 leading-tight">UBaS LMS</h1>
-                        <p className="text-xs text-slate-400 font-medium">{portalLabel}</p>
+                        <p className="text-[10px] text-primary-500 font-bold tracking-widest uppercase mt-0.5">{portalLabel}</p>
                     </div>
                 </div>
             </div>
