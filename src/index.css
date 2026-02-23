@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== BASE STYLES ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #F8FAFC;
+    color: #1E293B;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== SCROLLBAR STYLES ===== */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* ===== UTILITY CLASSES ===== */
+@layer components {
+    .glass-card {
+        @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-card;
+    }
+
+    .stat-card {
+        @apply bg-white rounded-xl p-5 shadow-card border border-card-border transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5;
+    }
+
+    .sidebar-item {
+        @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-sidebar-text transition-all duration-200 cursor-pointer hover:bg-sidebar-hover hover:text-slate-700;
+    }
+
+    .sidebar-item-active {
+        @apply bg-primary-50 text-primary-500 font-semibold hover:bg-primary-50 hover:text-primary-500;
+    }
+
+    .btn-primary {
+        @apply inline-flex items-center gap-2 px-4 py-2.5 bg-primary-500 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:bg-primary-600 hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-primary-500/30;
+    }
+
+    .btn-success {
+        @apply inline-flex items-center gap-2 px-4 py-2.5 bg-success-500 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:bg-success-600 hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-success-500/30;
+    }
+
+    .btn-purple {
+        @apply inline-flex items-center gap-2 px-4 py-2.5 bg-purple-500 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:bg-purple-600 hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-purple-500/30;
+    }
+
+    .btn-outline {
+        @apply inline-flex items-center gap-2 px-4 py-2.5 bg-white text-slate-600 text-sm font-medium rounded-lg border border-slate-200 transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-slate-500/20;
+    }
+
+    .input-field {
+        @apply w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400;
+    }
+
+    .badge {
+        @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold;
+    }
+
+    .badge-admin {
+        @apply badge bg-primary-100 text-primary-700;
+    }
+
+    .badge-teacher {
+        @apply badge bg-success-100 text-success-700;
+    }
+
+    .badge-student {
+        @apply badge bg-purple-100 text-purple-700;
+    }
+
+    .page-header {
+        @apply mb-8;
+    }
+
+    .page-title {
+        @apply text-2xl font-bold text-slate-800;
+    }
+
+    .page-subtitle {
+        @apply text-sm text-slate-500 mt-1;
+    }
+
+    .content-card {
+        @apply bg-white rounded-xl shadow-card border border-card-border p-6;
+    }
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 0.5rem;
+}

@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          Role      @default(STUDENT)
+  avatar        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Messages
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+
+  // Teacher relationships
+  taughtSubjects Subject[] @relation("TeacherSubjects")
+  managedClasses Class[]   @relation("ClassTeacher")
+
+  // Student relationships
+  classId       String?
+  class         Class?    @relation("StudentClass", fields: [classId], references: [id])
+  quizAttempts  QuizAttempt[]
+  assignmentSubmissions AssignmentSubmission[]
+  notifications Notification[]
+  announcements Announcement[] @relation("AuthoredAnnouncements")
+  liveClasses   LiveClass[]    @relation("TeacherLiveClasses")
+}
+
+model Class {
+  id            String    @id @default(cuid())
+  name          String    // e.g. JHS 1
+  section       String    // e.g. A
+  teacherId     String?
+  classTeacher  User?     @relation("ClassTeacher", fields: [teacherId], references: [id])
+  students      User[]    @relation("StudentClass")
+  subjects      Subject[]
+  createdAt     DateTime  @default(now())
+}
+
+model Subject {
+  id            String    @id @default(cuid())
+  name          String
+  code          String
+  color         String?
+  teacherId     String?
+  teacher       User?     @relation("TeacherSubjects", fields: [teacherId], references: [id])
+  classes       Class[]
+  quizzes       Quiz[]
+  lessons       Lesson[]
+  assignments   Assignment[]
+  liveClasses   LiveClass[]
+}
+
+model Lesson {
+  id            String    @id @default(cuid())
+  title         String
+  content       String    @db.Text
+  attachmentUrl String?
+  subjectId     String
+  subject       Subject   @relation(fields: [subjectId], references: [id])
+  createdAt     DateTime  @default(now())
+}
+
+model Quiz {
+  id            String    @id @default(cuid())
+  title         String
+  duration      Int       // in minutes
+  status        String    @default("draft") // draft, published, closed
+  subjectId     String
+  subject       Subject   @relation(fields: [subjectId], references: [id])
+  questions     Question[]
+  attempts      QuizAttempt[]
+  createdAt     DateTime  @default(now())
+}
+
+model Question {
+  id            String    @id @default(cuid())
+  quizId        String
+  quiz          Quiz      @relation(fields: [quizId], references: [id])
+  text          String    @db.Text
+  type          String    // multiple_choice, true_false, short_answer
+  options       String[]  // For multiple choice
+  correctAnswer String
+  explanation   String?   @db.Text
+}
+
+model QuizAttempt {
+  id            String    @id @default(cuid())
+  quizId        String
+  quiz          Quiz      @relation(fields: [quizId], references: [id])
+  studentId     String
+  student       User      @relation(fields: [studentId], references: [id])
+  score         Int
+  maxScore      Int
+  completedAt   DateTime  @default(now())
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  senderId    String
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId  String
+  receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  content     String   @db.Text
+  createdAt   DateTime @default(now())
+  read        Boolean  @default(false)
+}
+
+model Assignment {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  dueDate     DateTime
+  fileUrl     String?
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id])
+  submissions AssignmentSubmission[]
+  createdAt   DateTime @default(now())
+}
+
+model AssignmentSubmission {
+  id           String   @id @default(cuid())
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  studentId    String
+  student      User     @relation(fields: [studentId], references: [id])
+  fileUrl      String
+  grade        Int?
+  feedback     String?  @db.Text
+  submittedAt  DateTime @default(now())
+}
+
+model LiveClass {
+  id        String   @id @default(cuid())
+  title     String
+  topic     String
+  startTime DateTime
+  duration  Int      // in minutes
+  joinUrl   String
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  teacherId String
+  teacher   User     @relation("TeacherLiveClasses", fields: [teacherId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  authorId  String
+  author    User     @relation("AuthoredAnnouncements", fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      String   // e.g., 'quiz', 'assignment', 'announcement'
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
