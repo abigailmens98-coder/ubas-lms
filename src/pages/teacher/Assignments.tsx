@@ -8,18 +8,20 @@ export default function TeacherAssignments({ user }: { user: any }) {
     const [form, setForm] = useState({ title: '', description: '', dueDate: '', fileUrl: '', subjectId: '' })
     const [uploading, setUploading] = useState(false)
 
-    const { data: subjects = [] } = useQuery({
+    const { data: subjectsData = [] } = useQuery({
         queryKey: ['teacher-subjects', user.id], queryFn: async () => {
             const res = await fetch(`http://localhost:3001/api/subjects`); return res.json();
         }
     })
+    const subjects = Array.isArray(subjectsData) ? subjectsData : []
     const teacherSubjects = subjects.filter((s: any) => s.teacherId === user.id)
 
-    const { data: assignments = [], isLoading } = useQuery({
+    const { data: assignmentsData = [], isLoading } = useQuery({
         queryKey: ['teacher-assignments', user.id], queryFn: async () => {
             const res = await fetch(`http://localhost:3001/api/assignments?role=teacher&userId=${user.id}`); return res.json();
         }
     })
+    const assignments = Array.isArray(assignmentsData) ? assignmentsData : []
 
     const createMutation = useMutation({
         mutationFn: async (data: any) => {
@@ -48,13 +50,13 @@ export default function TeacherAssignments({ user }: { user: any }) {
     if (isLoading) return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
 
     return (
-        <div className="p-6 text-slate-700 animate-fade-in">
-            <div className="flex justify-between items-center mb-8">
+        <div className="p-4 sm:p-6 text-slate-700 animate-fade-in">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold mb-2 text-slate-800">Assignments</h1>
-                    <p className="text-slate-500">Create assignments and review student submissions</p>
+                    <h1 className="text-2xl font-bold mb-1 sm:mb-2 text-slate-800">Assignments</h1>
+                    <p className="text-sm sm:text-base text-slate-500">Create assignments and review student submissions</p>
                 </div>
-                <button onClick={() => setShowModal(true)} className="px-5 py-2.5 bg-success-500 text-white shadow-md hover:bg-success-600 rounded-xl font-semibold flex items-center gap-2">
+                <button onClick={() => setShowModal(true)} className="w-full sm:w-auto px-5 py-2.5 bg-success-500 text-white shadow-md hover:bg-success-600 rounded-xl font-semibold flex items-center justify-center gap-2">
                     <Plus className="w-4 h-4" /> New Assignment
                 </button>
             </div>
@@ -73,10 +75,10 @@ export default function TeacherAssignments({ user }: { user: any }) {
                             <p className="text-sm font-semibold text-primary-500 mb-4">{assignment.subject?.name}</p>
                             <p className="text-slate-600 mb-6">{assignment.description}</p>
 
-                            <div className="flex items-center gap-6 text-sm text-slate-500 font-medium">
-                                <span className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg"><Clock className="w-4 h-4 text-slate-400" /> Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
-                                <span className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg"><Users className="w-4 h-4 text-slate-400" /> {assignment.submissions?.length || 0} Submissions</span>
-                                {assignment.fileUrl && <a href={`http://localhost:3001${assignment.fileUrl}`} target="_blank" className="flex items-center gap-2 text-primary-600 bg-primary-50 hover:bg-primary-100 px-3 py-1.5 rounded-lg transition-colors"><Download className="w-4 h-4" /> Reference File</a>}
+                            <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm text-slate-500 font-medium mt-4">
+                                <span className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100"><Clock className="w-4 h-4 text-slate-400" /> Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
+                                <span className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100"><Users className="w-4 h-4 text-slate-400" /> {assignment.submissions?.length || 0} Submissions</span>
+                                {assignment.fileUrl && <a href={`http://localhost:3001${assignment.fileUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-primary-600 bg-primary-50 hover:bg-primary-100 px-3 py-1.5 rounded-lg border border-primary-100 transition-colors"><Download className="w-4 h-4" /> Reference File</a>}
                             </div>
                         </div>
 
@@ -136,9 +138,11 @@ export default function TeacherAssignments({ user }: { user: any }) {
                             </div>
                         </div>
 
-                        <div className="mt-8 flex gap-3">
-                            <button onClick={() => setShowModal(false)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors" disabled={createMutation.isPending || uploading}>Cancel</button>
-                            <button onClick={() => createMutation.mutate(form)} className="flex-1 py-3 bg-primary-500 text-white rounded-xl font-bold hover:bg-primary-600 transition-colors shadow-md flex justify-center items-center" disabled={!form.subjectId || !form.title || !form.dueDate || createMutation.isPending || uploading}>
+
+
+                        <div className="mt-8 flex flex-col-reverse sm:flex-row gap-3">
+                            <button onClick={() => setShowModal(false)} className="w-full sm:flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors" disabled={createMutation.isPending || uploading}>Cancel</button>
+                            <button onClick={() => createMutation.mutate(form)} className="w-full sm:flex-1 py-3 bg-primary-500 text-white rounded-xl font-bold hover:bg-primary-600 transition-colors shadow-md flex justify-center items-center" disabled={!form.subjectId || !form.title || !form.dueDate || createMutation.isPending || uploading}>
                                 {createMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Publish Assignment'}
                             </button>
                         </div>

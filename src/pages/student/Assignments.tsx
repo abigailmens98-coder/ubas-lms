@@ -6,7 +6,7 @@ export default function StudentAssignments({ user }: { user: any }) {
     const queryClient = useQueryClient()
     const [uploadingId, setUploadingId] = useState<string | null>(null)
 
-    const { data: assignments = [], isLoading } = useQuery({
+    const { data: assignmentsData = [], isLoading } = useQuery({
         queryKey: ['student-assignments', user.id],
         queryFn: async () => {
             const res = await fetch(`http://localhost:3001/api/assignments?role=student&userId=${user.id}`)
@@ -14,6 +14,7 @@ export default function StudentAssignments({ user }: { user: any }) {
             return res.json()
         }
     })
+    const assignments = Array.isArray(assignmentsData) ? assignmentsData : []
 
     const submitMutation = useMutation({
         mutationFn: async ({ id, fileUrl }: { id: string, fileUrl: string }) => {
@@ -56,9 +57,9 @@ export default function StudentAssignments({ user }: { user: any }) {
     }
 
     return (
-        <div className="p-6 text-slate-700 animate-fade-in">
-            <h1 className="text-2xl font-bold mb-2 text-slate-800">Assignments</h1>
-            <p className="text-slate-500 mb-8">View and submit your pending homework</p>
+        <div className="p-4 sm:p-6 text-slate-700 animate-fade-in">
+            <h1 className="text-2xl font-bold mb-1 sm:mb-2 text-slate-800">Assignments</h1>
+            <p className="text-sm sm:text-base text-slate-500 mb-6 sm:mb-8">View and submit your pending homework</p>
 
             <div className="space-y-6">
                 {assignments.length === 0 && (
@@ -73,17 +74,17 @@ export default function StudentAssignments({ user }: { user: any }) {
                     const isOverdue = new Date(assignment.dueDate) < new Date() && !submission
 
                     return (
-                        <div key={assignment.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-6">
-                            <div className={`w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center
+                        <div key={assignment.id} className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 sm:gap-6">
+                            <div className={`w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-2xl flex items-center justify-center
                                 ${submission ? 'bg-success-100 text-success-600' : isOverdue ? 'bg-danger-100 text-danger-600' : 'bg-primary-100 text-primary-600'}`}>
                                 {submission ? <CheckCircle2 className="w-7 h-7" /> : isOverdue ? <Clock className="w-7 h-7" /> : <BookOpen className="w-7 h-7" />}
                             </div>
 
                             <div className="flex-1">
-                                <div className="flex flex-wrap items-start justify-between gap-4 mb-2">
+                                <div className="flex flex-col sm:flex-row sm:flex-wrap items-start justify-between gap-3 sm:gap-4 mb-2">
                                     <div>
-                                        <h3 className="text-lg font-bold text-slate-800">{assignment.title}</h3>
-                                        <p className="text-sm font-medium text-slate-500">{assignment.subject?.name}</p>
+                                        <h3 className="text-base sm:text-lg font-bold text-slate-800">{assignment.title}</h3>
+                                        <p className="text-xs sm:text-sm font-medium text-slate-500">{assignment.subject?.name}</p>
                                     </div>
                                     <div className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5
                                         ${submission ? 'bg-success-50 text-success-700 border border-success-200' :
@@ -103,8 +104,8 @@ export default function StudentAssignments({ user }: { user: any }) {
                                 )}
 
                                 {!submission && (
-                                    <div className="mt-6 pt-6 border-t border-slate-100">
-                                        <label className="flex items-center justify-center gap-2 w-full md:w-auto px-6 py-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl cursor-pointer transition-colors font-medium text-sm">
+                                    <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-slate-100">
+                                        <label className="flex items-center justify-center gap-2 w-full md:w-auto px-6 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl cursor-pointer transition-colors font-semibold text-sm">
                                             {uploadingId === assignment.id ? <Loader2 className="w-4 h-4 animate-spin text-primary-500" /> : <FileUp className="w-4 h-4 text-primary-500" />}
                                             {uploadingId === assignment.id ? 'Uploading...' : 'Upload Submission'}
                                             <input type="file" className="hidden" onChange={(e) => {
