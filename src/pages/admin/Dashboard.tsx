@@ -6,7 +6,7 @@ export default function AdminDashboard({ user }: { user: any }) {
     const { data: stats, isLoading } = useQuery({
         queryKey: ['admin-stats'],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/stats/admin/${user.id}`)
+            const res = await fetch(`/api/stats/admin/${user.id}`)
             if (!res.ok) throw new Error('Failed to fetch admin stats')
             return res.json()
         }

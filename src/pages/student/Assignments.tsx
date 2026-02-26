@@ -9,7 +9,7 @@ export default function StudentAssignments({ user }: { user: any }) {
     const { data: assignmentsData = [], isLoading } = useQuery({
         queryKey: ['student-assignments', user.id],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/assignments?role=student&userId=${user.id}`)
+            const res = await fetch(`/api/assignments?role=student&userId=${user.id}`)
             if (!res.ok) throw new Error('Failed to fetch assignments')
             return res.json()
         }
@@ -18,7 +18,7 @@ export default function StudentAssignments({ user }: { user: any }) {
 
     const submitMutation = useMutation({
         mutationFn: async ({ id, fileUrl }: { id: string, fileUrl: string }) => {
-            const res = await fetch(`http://localhost:3001/api/assignments/${id}/submit`, {
+            const res = await fetch(`/api/assignments/${id}/submit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ studentId: user.id, fileUrl })
@@ -39,7 +39,7 @@ export default function StudentAssignments({ user }: { user: any }) {
         formData.append('file', file)
 
         try {
-            const uploadRes = await fetch('http://localhost:3001/api/upload', {
+            const uploadRes = await fetch('/api/upload', {
                 method: 'POST',
                 body: formData
             })
@@ -97,7 +97,7 @@ export default function StudentAssignments({ user }: { user: any }) {
                                 <p className="text-slate-600 text-sm mt-3">{assignment.description}</p>
 
                                 {assignment.fileUrl && (
-                                    <a href={`http://localhost:3001${assignment.fileUrl}`} target="_blank" className="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-primary-600 hover:text-primary-700">
+                                    <a href={`${assignment.fileUrl}`} target="_blank" className="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-primary-600 hover:text-primary-700">
                                         <FileUp className="w-4 h-4" />
                                         Download Attachment
                                     </a>

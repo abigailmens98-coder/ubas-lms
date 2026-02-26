@@ -6,7 +6,7 @@ export default function StudentGrades({ user }: { user: any }) {
     const { data: stats = {}, isLoading } = useQuery({
         queryKey: ['student-stats', user.id],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/stats/student/${user.id}`)
+            const res = await fetch(`/api/stats/student/${user.id}`)
             if (!res.ok) throw new Error('Failed to fetch grades')
             return res.json()
         }

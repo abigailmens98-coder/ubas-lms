@@ -8,7 +8,7 @@ export default function StudentSubjects({ user }: { user: any }) {
     const { data: userClass, isLoading: loadingClass } = useQuery({
         queryKey: ['student-class', user.id],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/users/${user.id}`)
+            const res = await fetch(`/api/users/${user.id}`)
             if (!res.ok) return null
             return res.json()
         }
@@ -17,7 +17,7 @@ export default function StudentSubjects({ user }: { user: any }) {
     const { data: subjects = [], isLoading: loadingSubjects } = useQuery({
         queryKey: ['student-subjects', user.id],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/subjects`)
+            const res = await fetch(`/api/subjects`)
             if (!res.ok) throw new Error()
             return res.json()
         }
@@ -27,7 +27,7 @@ export default function StudentSubjects({ user }: { user: any }) {
         queryKey: ['student-lessons', selectedSubject],
         queryFn: async () => {
             if (!selectedSubject) return []
-            const res = await fetch(`http://localhost:3001/api/lessons?subjectId=${selectedSubject}`)
+            const res = await fetch(`/api/lessons?subjectId=${selectedSubject}`)
             if (!res.ok) throw new Error()
             return res.json()
         },
@@ -108,7 +108,7 @@ export default function StudentSubjects({ user }: { user: any }) {
                                     <p className="text-slate-600 text-sm leading-relaxed mb-6">{lesson.content}</p>
 
                                     {lesson.attachmentUrl && (
-                                        <a href={`http://localhost:3001${lesson.attachmentUrl}`} target="_blank" className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors text-primary-600 w-full sm:w-auto">
+                                        <a href={`${lesson.attachmentUrl}`} target="_blank" className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors text-primary-600 w-full sm:w-auto">
                                             <Download className="w-4 h-4" />
                                             Download Attachment
                                         </a>

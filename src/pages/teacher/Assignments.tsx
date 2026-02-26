@@ -10,7 +10,7 @@ export default function TeacherAssignments({ user }: { user: any }) {
 
     const { data: subjectsData = [] } = useQuery({
         queryKey: ['teacher-subjects', user.id], queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/subjects`); return res.json();
+            const res = await fetch(`/api/subjects`); return res.json();
         }
     })
     const subjects = Array.isArray(subjectsData) ? subjectsData : []
@@ -18,14 +18,14 @@ export default function TeacherAssignments({ user }: { user: any }) {
 
     const { data: assignmentsData = [], isLoading } = useQuery({
         queryKey: ['teacher-assignments', user.id], queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/assignments?role=teacher&userId=${user.id}`); return res.json();
+            const res = await fetch(`/api/assignments?role=teacher&userId=${user.id}`); return res.json();
         }
     })
     const assignments = Array.isArray(assignmentsData) ? assignmentsData : []
 
     const createMutation = useMutation({
         mutationFn: async (data: any) => {
-            const res = await fetch(`http://localhost:3001/api/assignments`, {
+            const res = await fetch(`/api/assignments`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
             }); return res.json()
         },
@@ -40,7 +40,7 @@ export default function TeacherAssignments({ user }: { user: any }) {
         const formData = new FormData()
         formData.append('file', file)
         try {
-            const res = await fetch('http://localhost:3001/api/upload', { method: 'POST', body: formData })
+            const res = await fetch('/api/upload', { method: 'POST', body: formData })
             const { fileUrl } = await res.json()
             setForm({ ...form, fileUrl })
         } catch { alert('Upload failed') }
@@ -78,7 +78,7 @@ export default function TeacherAssignments({ user }: { user: any }) {
                             <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm text-slate-500 font-medium mt-4">
                                 <span className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100"><Clock className="w-4 h-4 text-slate-400" /> Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
                                 <span className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100"><Users className="w-4 h-4 text-slate-400" /> {assignment.submissions?.length || 0} Submissions</span>
-                                {assignment.fileUrl && <a href={`http://localhost:3001${assignment.fileUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-primary-600 bg-primary-50 hover:bg-primary-100 px-3 py-1.5 rounded-lg border border-primary-100 transition-colors"><Download className="w-4 h-4" /> Reference File</a>}
+                                {assignment.fileUrl && <a href={`${assignment.fileUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-primary-600 bg-primary-50 hover:bg-primary-100 px-3 py-1.5 rounded-lg border border-primary-100 transition-colors"><Download className="w-4 h-4" /> Reference File</a>}
                             </div>
                         </div>
 
@@ -89,7 +89,7 @@ export default function TeacherAssignments({ user }: { user: any }) {
                                     {assignment.submissions.slice(0, 3).map((sub: any) => (
                                         <li key={sub.id} className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                                             <span className="text-sm font-semibold text-slate-700 truncate">Student ID: {sub.studentId.substring(0, 8)}</span>
-                                            <a href={`http://localhost:3001${sub.fileUrl}`} target="_blank" className="text-primary-500 hover:text-primary-700"><Download className="w-4 h-4" /></a>
+                                            <a href={`${sub.fileUrl}`} target="_blank" className="text-primary-500 hover:text-primary-700"><Download className="w-4 h-4" /></a>
                                         </li>
                                     ))}
                                 </ul>

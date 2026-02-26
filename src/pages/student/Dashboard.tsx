@@ -34,7 +34,7 @@ export default function StudentDashboard({ user }: { user: any }) {
     const { data: quizzes = [], isLoading } = useQuery<Quiz[]>({
         queryKey: ['available-quizzes'],
         queryFn: async () => {
-            const res = await fetch('http://localhost:3001/api/quizzes')
+            const res = await fetch('/api/quizzes')
             if (!res.ok) throw new Error('Failed to fetch quizzes')
             return res.json()
         }
@@ -43,7 +43,7 @@ export default function StudentDashboard({ user }: { user: any }) {
     // Start Quiz Mutation (to fetch questions)
     const startQuizMutation = useMutation({
         mutationFn: async (quizId: string) => {
-            const res = await fetch(`http://localhost:3001/api/quizzes/${quizId}`)
+            const res = await fetch(`/api/quizzes/${quizId}`)
             if (!res.ok) throw new Error('Failed to fetch quiz details')
             return res.json()
         },
@@ -58,7 +58,7 @@ export default function StudentDashboard({ user }: { user: any }) {
     // Submit Results Mutation
     const submitMutation = useMutation({
         mutationFn: async (result: { quizId: string, studentId: string, score: number, maxScore: number }) => {
-            const res = await fetch('http://localhost:3001/api/quizzes/submit', {
+            const res = await fetch('/api/quizzes/submit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(result)

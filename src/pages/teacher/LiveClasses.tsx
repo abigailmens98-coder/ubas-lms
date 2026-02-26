@@ -10,7 +10,7 @@ export default function TeacherLiveClasses({ user }: { user: any }) {
     const { data: subjects = [] } = useQuery({
         queryKey: ['teacher-subjects', user.id],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/subjects`)
+            const res = await fetch(`/api/subjects`)
             if (!res.ok) throw new Error()
             return res.json()
         }
@@ -22,7 +22,7 @@ export default function TeacherLiveClasses({ user }: { user: any }) {
     const { data: classes = [], isLoading } = useQuery({
         queryKey: ['live-classes', 'teacher', user.id],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/live-classes?role=teacher&userId=${user.id}`)
+            const res = await fetch(`/api/live-classes?role=teacher&userId=${user.id}`)
             if (!res.ok) throw new Error('Failed to fetch classes')
             return res.json()
         }
@@ -30,7 +30,7 @@ export default function TeacherLiveClasses({ user }: { user: any }) {
 
     const createMutation = useMutation({
         mutationFn: async (data: any) => {
-            const res = await fetch(`http://localhost:3001/api/live-classes`, {
+            const res = await fetch(`/api/live-classes`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...data, teacherId: user.id })

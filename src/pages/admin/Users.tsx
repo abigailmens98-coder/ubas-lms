@@ -61,7 +61,7 @@ export default function AdminUsers() {
     const { data: users = [], isLoading } = useQuery<UserItem[]>({
         queryKey: ['users'],
         queryFn: async () => {
-            const res = await fetch('http://localhost:3001/api/users')
+            const res = await fetch('/api/users')
             if (!res.ok) throw new Error('Failed to fetch users')
             return res.json()
         }
@@ -71,7 +71,7 @@ export default function AdminUsers() {
     const { data: classes = [] } = useQuery<ClassItem[]>({
         queryKey: ['classes'],
         queryFn: async () => {
-            const res = await fetch('http://localhost:3001/api/classes')
+            const res = await fetch('/api/classes')
             if (!res.ok) throw new Error('Failed to fetch classes')
             return res.json()
         }
@@ -80,7 +80,7 @@ export default function AdminUsers() {
     // Create User Mutation
     const createMutation = useMutation({
         mutationFn: async (newUser: typeof formData) => {
-            const res = await fetch('http://localhost:3001/api/users', {
+            const res = await fetch('/api/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newUser)
@@ -98,7 +98,7 @@ export default function AdminUsers() {
     // Enrollment Mutation
     const enrollMutation = useMutation({
         mutationFn: async ({ userId, classId }: { userId: string, classId: string }) => {
-            const res = await fetch(`http://localhost:3001/api/users/${userId}/enroll`, {
+            const res = await fetch(`/api/users/${userId}/enroll`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ classId })
@@ -115,7 +115,7 @@ export default function AdminUsers() {
     // Delete User Mutation
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const res = await fetch(`http://localhost:3001/api/users/${id}`, {
+            const res = await fetch(`/api/users/${id}`, {
                 method: 'DELETE'
             })
             if (!res.ok) throw new Error('Failed to delete user')

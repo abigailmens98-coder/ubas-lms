@@ -13,7 +13,7 @@ export default function StudentLiveClasses({ user }: { user: any }) {
     const { data: classes = [], isLoading } = useQuery({
         queryKey: ['live-classes', 'student', user.id],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/live-classes?role=student&userId=${user.id}`)
+            const res = await fetch(`/api/live-classes?role=student&userId=${user.id}`)
             if (!res.ok) throw new Error('Failed to fetch classes')
             return res.json()
         }

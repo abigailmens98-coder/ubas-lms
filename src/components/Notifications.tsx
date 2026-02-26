@@ -9,7 +9,7 @@ export default function Notifications({ userId }: { userId: string }) {
     const { data: notifications = [] } = useQuery({
         queryKey: ['notifications', userId],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/notifications/${userId}`)
+            const res = await fetch(`/api/notifications/${userId}`)
             if (!res.ok) throw new Error()
             return res.json()
         },
@@ -20,7 +20,7 @@ export default function Notifications({ userId }: { userId: string }) {
 
     const readMutation = useMutation({
         mutationFn: async () => {
-            await fetch(`http://localhost:3001/api/notifications/${userId}/read`, { method: 'PATCH' })
+            await fetch(`/api/notifications/${userId}/read`, { method: 'PATCH' })
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications', userId] })

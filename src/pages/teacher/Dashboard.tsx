@@ -6,7 +6,7 @@ export default function TeacherDashboard({ user }: { user: any }) {
     const { data: stats, isLoading } = useQuery({
         queryKey: ['teacher-stats', user.id],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/stats/teacher/${user.id}`)
+            const res = await fetch(`/api/stats/teacher/${user.id}`)
             if (!res.ok) throw new Error('Failed to fetch teacher stats')
             return res.json()
         }

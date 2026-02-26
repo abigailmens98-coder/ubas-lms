@@ -10,7 +10,7 @@ export default function AdminAnnouncements({ user }: { user: any }) {
     const { data: announcements = [], isLoading } = useQuery({
         queryKey: ['announcements'],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/announcements`)
+            const res = await fetch(`/api/announcements`)
             if (!res.ok) throw new Error('Failed to fetch')
             return res.json()
         }
@@ -18,7 +18,7 @@ export default function AdminAnnouncements({ user }: { user: any }) {
 
     const createMutation = useMutation({
         mutationFn: async (data: any) => {
-            const res = await fetch(`http://localhost:3001/api/announcements`, {
+            const res = await fetch(`/api/announcements`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

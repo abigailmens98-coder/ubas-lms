@@ -27,7 +27,7 @@ export default function TeacherQuizzes() {
     const { data: quizzes = [], isLoading } = useQuery({
         queryKey: ['teacher-quizzes', user.id],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/quizzes/teacher/${user.id}`)
+            const res = await fetch(`/api/quizzes/teacher/${user.id}`)
             if (!res.ok) throw new Error('Failed to fetch quizzes')
             return res.json()
         },
@@ -37,7 +37,7 @@ export default function TeacherQuizzes() {
     const handleGenerateAI = async () => {
         setIsGenerating(true)
         try {
-            const res = await fetch('http://localhost:3001/api/ai/generate-quiz', {
+            const res = await fetch('/api/ai/generate-quiz', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

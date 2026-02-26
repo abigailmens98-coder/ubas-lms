@@ -31,7 +31,7 @@ export default function TeacherLessons() {
     const { data: lessons = [], isLoading } = useQuery<Lesson[]>({
         queryKey: ['lessons'],
         queryFn: async () => {
-            const res = await fetch('http://localhost:3001/api/lessons')
+            const res = await fetch('/api/lessons')
             if (!res.ok) throw new Error('Failed to fetch lessons')
             return res.json()
         }
@@ -41,7 +41,7 @@ export default function TeacherLessons() {
     const { data: subjects = [] } = useQuery<Subject[]>({
         queryKey: ['subjects'],
         queryFn: async () => {
-            const res = await fetch('http://localhost:3001/api/subjects')
+            const res = await fetch('/api/subjects')
             if (!res.ok) throw new Error('Failed to fetch subjects')
             return res.json()
         }
@@ -50,7 +50,7 @@ export default function TeacherLessons() {
     // Create Lesson Mutation
     const createMutation = useMutation({
         mutationFn: async (newLesson: typeof formData) => {
-            const res = await fetch('http://localhost:3001/api/lessons', {
+            const res = await fetch('/api/lessons', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newLesson)

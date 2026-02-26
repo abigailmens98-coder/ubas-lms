@@ -29,7 +29,7 @@ export default function AdminClasses() {
     const { data: classes = [], isLoading } = useQuery<ClassItem[]>({
         queryKey: ['classes'],
         queryFn: async () => {
-            const res = await fetch('http://localhost:3001/api/classes')
+            const res = await fetch('/api/classes')
             if (!res.ok) throw new Error('Failed to fetch classes')
             return res.json()
         }
@@ -39,7 +39,7 @@ export default function AdminClasses() {
     const { data: teachers = [] } = useQuery<Teacher[]>({
         queryKey: ['users', 'teachers'],
         queryFn: async () => {
-            const res = await fetch('http://localhost:3001/api/users')
+            const res = await fetch('/api/users')
             if (!res.ok) throw new Error('Failed to fetch users')
             const allUsers = await res.json()
             return allUsers.filter((u: Teacher) => u.role === 'teacher' || u.role === 'admin')
@@ -49,7 +49,7 @@ export default function AdminClasses() {
     // Create Class Mutation
     const createMutation = useMutation({
         mutationFn: async (newClass: typeof formData) => {
-            const res = await fetch('http://localhost:3001/api/classes', {
+            const res = await fetch('/api/classes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newClass)
@@ -67,7 +67,7 @@ export default function AdminClasses() {
     // Delete Class Mutation
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const res = await fetch(`http://localhost:3001/api/classes/${id}`, {
+            const res = await fetch(`/api/classes/${id}`, {
                 method: 'DELETE'
             })
             if (!res.ok) throw new Error('Failed to delete class')

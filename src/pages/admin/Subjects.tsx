@@ -41,7 +41,7 @@ export default function AdminSubjects() {
     const { data: subjects = [], isLoading } = useQuery<SubjectItem[]>({
         queryKey: ['subjects'],
         queryFn: async () => {
-            const res = await fetch('http://localhost:3001/api/subjects')
+            const res = await fetch('/api/subjects')
             if (!res.ok) throw new Error('Failed to fetch subjects')
             return res.json()
         }
@@ -51,7 +51,7 @@ export default function AdminSubjects() {
     const { data: teachers = [] } = useQuery<Teacher[]>({
         queryKey: ['users', 'teachers'],
         queryFn: async () => {
-            const res = await fetch('http://localhost:3001/api/users')
+            const res = await fetch('/api/users')
             if (!res.ok) throw new Error('Failed to fetch users')
             const allUsers = await res.json()
             return allUsers.filter((u: Teacher) => u.role === 'teacher' || u.role === 'admin')
@@ -61,7 +61,7 @@ export default function AdminSubjects() {
     // Create Subject Mutation
     const createMutation = useMutation({
         mutationFn: async (newSubject: typeof formData) => {
-            const res = await fetch('http://localhost:3001/api/subjects', {
+            const res = await fetch('/api/subjects', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newSubject)
@@ -79,7 +79,7 @@ export default function AdminSubjects() {
     // Delete Subject Mutation
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const res = await fetch(`http://localhost:3001/api/subjects/${id}`, {
+            const res = await fetch(`/api/subjects/${id}`, {
                 method: 'DELETE'
             })
             if (!res.ok) throw new Error('Failed to delete subject')

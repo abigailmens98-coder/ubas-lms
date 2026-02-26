@@ -7,7 +7,8 @@
         "dev": "vite",
         "server": "nodemon server/index.js",
         "build": "tsc -b && vite build",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "start": "node server/index.js"
     },
     "dependencies": {
         "@google/generative-ai": "^0.24.1",

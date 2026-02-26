@@ -11,7 +11,7 @@ export default function Messages({ user }: { user: any }) {
     const { data: contacts, isLoading: loadingContacts } = useQuery({
         queryKey: ['contacts', user.id],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/api/users/contacts/${user.id}`)
+            const res = await fetch(`/api/users/contacts/${user.id}`)
             if (!res.ok) throw new Error('Failed to fetch contacts')
             return res.json()
         }
@@ -21,7 +21,7 @@ export default function Messages({ user }: { user: any }) {
         queryKey: ['messages', user.id, selectedContact?.id],
         queryFn: async () => {
             if (!selectedContact) return []
-            const res = await fetch(`http://localhost:3001/api/messages/${user.id}/${selectedContact.id}`)
+            const res = await fetch(`/api/messages/${user.id}/${selectedContact.id}`)
             if (!res.ok) throw new Error('Failed to fetch messages')
             return res.json()
         },
@@ -31,7 +31,7 @@ export default function Messages({ user }: { user: any }) {
 
     const sendMessageMutation = useMutation({
         mutationFn: async (content: string) => {
-            const res = await fetch(`http://localhost:3001/api/messages`, {
+            const res = await fetch(`/api/messages`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ senderId: user.id, receiverId: selectedContact.id, content })
