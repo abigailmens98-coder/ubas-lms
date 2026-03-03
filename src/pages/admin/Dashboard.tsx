@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-import { Users, BookOpen, Layers, Award, Loader2 } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
+import { Users, BookOpen, Layers, Award, Loader2, ClipboardList, Bell, UserCheck, TrendingUp } from 'lucide-react'
 
 export default function AdminDashboard({ user }: { user: any }) {
     const { data: stats, isLoading } = useQuery({
@@ -8,6 +8,15 @@ export default function AdminDashboard({ user }: { user: any }) {
         queryFn: async () => {
             const res = await fetch(`/api/stats/admin/${user.id}`)
             if (!res.ok) throw new Error('Failed to fetch admin stats')
+            return res.json()
+        }
+    })
+
+    const { data: dashboard } = useQuery({
+        queryKey: ['admin-dashboard'],
+        queryFn: async () => {
+            const res = await fetch(`/api/dashboard/admin/${user.id}`)
+            if (!res.ok) throw new Error('Failed')
             return res.json()
         }
     })
@@ -21,71 +30,76 @@ export default function AdminDashboard({ user }: { user: any }) {
     }
 
     const cards = [
-        { title: 'Total Students', value: stats?.students || 0, icon: Users, color: 'bg-blue-500 text-white' },
-        { title: 'Total Classes', value: stats?.classes || 0, icon: Layers, color: 'bg-green-500 text-white' },
-        { title: 'Total Subjects', value: stats?.subjects || 0, icon: BookOpen, color: 'bg-purple-500 text-white' },
-        { title: 'Total Quizzes', value: stats?.quizzes || 0, icon: Award, color: 'bg-orange-500 text-white' },
+        { title: 'Total Students', value: dashboard?.students || stats?.students || 0, icon: Users, gradient: 'from-blue-500 to-blue-600' },
+        { title: 'Total Teachers', value: dashboard?.teachers || 0, icon: UserCheck, gradient: 'from-emerald-500 to-emerald-600' },
+        { title: 'Total Classes', value: dashboard?.classes || stats?.classes || 0, icon: Layers, gradient: 'from-violet-500 to-violet-600' },
+        { title: 'Total Subjects', value: dashboard?.subjects || stats?.subjects || 0, icon: BookOpen, gradient: 'from-amber-500 to-amber-600' },
+        { title: 'Assignments', value: dashboard?.assignments || 0, icon: ClipboardList, gradient: 'from-pink-500 to-pink-600' },
+        { title: 'Announcements', value: dashboard?.announcements || 0, icon: Bell, gradient: 'from-cyan-500 to-cyan-600' },
     ]
 
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
 
     return (
-        <div className="p-6 animate-fade-in text-slate-700">
-            <h1 className="text-2xl font-bold mb-6 text-slate-800">Admin Dashboard</h1>
+        <div className="p-4 lg:p-6 animate-fade-in text-slate-700">
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-slate-800">Welcome back, {user.name} 👋</h1>
+                <p className="text-sm text-slate-500 mt-1">Here's an overview of your school</p>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
                 {cards.map((card, i) => (
-                    <div key={i} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex items-center justify-between transition-all hover:shadow-md">
-                        <div>
-                            <p className="text-slate-500 text-sm font-medium">{card.title}</p>
-                            <h2 className="text-3xl font-bold text-slate-800 mt-1">{card.value}</h2>
+                    <div key={i} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 hover:shadow-md transition-all group">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 transition-transform`}>
+                            <card.icon className="w-5 h-5 text-white" />
                         </div>
-                        <div className={`p-4 rounded-2xl ${card.color}`}>
-                            <card.icon className="w-6 h-6" />
-                        </div>
+                        <h2 className="text-2xl font-bold text-slate-800">{card.value}</h2>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">{card.title}</p>
                     </div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                    <h2 className="text-lg font-bold mb-6 text-slate-800">School Performance by Subject</h2>
-                    <div className="h-80">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                    <h2 className="text-lg font-bold mb-6 text-slate-800 flex items-center gap-2"><TrendingUp className="w-5 h-5 text-primary-500" /> Performance by Subject</h2>
+                    <div className="h-72">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={stats?.performanceChart || []} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="subject" axisLine={false} tickLine={false} />
-                                <YAxis axisLine={false} tickLine={false} domain={[0, 100]} />
-                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                <Legend />
-                                <Bar dataKey="averageScore" fill="#3b82f6" name="Average Score (%)" radius={[4, 4, 0, 0]} />
-                            </BarChart>
+                            <AreaChart data={stats?.performanceChart || []} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                                <defs>
+                                    <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#1385c5" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#1385c5" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis dataKey="subject" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                                <YAxis axisLine={false} tickLine={false} domain={[0, 100]} tick={{ fontSize: 12 }} />
+                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                <Area type="monotone" dataKey="averageScore" stroke="#1385c5" fill="url(#colorScore)" strokeWidth={2} name="Average Score (%)" />
+                            </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                    <h2 className="text-lg font-bold mb-6 text-slate-800">Quiz Attempts Distribution</h2>
-                    <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={stats?.performanceChart || []}
-                                    dataKey="attempts"
-                                    nameKey="subject"
-                                    cx="50%"
-                                    cy="50%"
-                                    outerRadius={100}
-                                    label
-                                >
-                                    {(stats?.performanceChart || []).map((entry: any, index: number) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
+                    <h2 className="text-lg font-bold mb-4 text-slate-800 flex items-center gap-2"><Bell className="w-5 h-5 text-warning-500" /> Recent Activity</h2>
+                    <div className="space-y-3 max-h-72 overflow-y-auto">
+                        {(dashboard?.recentActivity || []).length === 0 ? (
+                            <p className="text-sm text-slate-400 text-center py-8">No recent activity</p>
+                        ) : (
+                            (dashboard?.recentActivity || []).map((act: any, i: number) => (
+                                <div key={i} className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold 
+                                        ${act.type === 'assignment' ? 'bg-pink-100 text-pink-600' : act.type === 'announcement' ? 'bg-amber-100 text-amber-600' : 'bg-primary-100 text-primary-600'}`}>
+                                        {act.type === 'assignment' ? '📝' : act.type === 'announcement' ? '📢' : '🔔'}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold text-slate-700 truncate">{act.title}</p>
+                                        <p className="text-xs text-slate-400">{new Date(act.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </div>

@@ -461,10 +461,19 @@ app.get('/api/users/contacts/:userId', async (req, res) => {
                 select: { id: true, name: true, role: true, avatar: true }
             });
         } else {
-            contacts = await prisma.user.findMany({
+            // Teachers + Admin + Classmates
+            const teachersAndAdmin = await prisma.user.findMany({
                 where: { role: { in: ['TEACHER', 'ADMIN'] }, id: { not: user.id } },
                 select: { id: true, name: true, role: true, avatar: true }
             });
+            let classmates = [];
+            if (user.classId) {
+                classmates = await prisma.user.findMany({
+                    where: { classId: user.classId, id: { not: user.id }, role: 'STUDENT' },
+                    select: { id: true, name: true, role: true, avatar: true }
+                });
+            }
+            contacts = [...teachersAndAdmin, ...classmates];
         }
         res.json(contacts);
     } catch (error) {
@@ -637,6 +646,91 @@ app.patch('/api/notifications/:userId/read', async (req, res) => {
         res.status(200).json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Failed' });
+    }
+});
+
+// --- User Profile ---
+app.patch('/api/users/:id/profile', async (req, res) => {
+    const { name, avatar } = req.body;
+    try {
+        const user = await prisma.user.update({
+            where: { id: req.params.id },
+            data: { ...(name && { name }), ...(avatar !== undefined && { avatar }) }
+        });
+        const { password: _, ...userInfo } = user;
+        userInfo.role = userInfo.role.toLowerCase();
+        res.json(userInfo);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update profile' });
+    }
+});
+
+app.patch('/api/users/:id/password', async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    try {
+        const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+        if (!user || user.password !== currentPassword) {
+            return res.status(401).json({ message: 'Current password is incorrect' });
+        }
+        await prisma.user.update({ where: { id: req.params.id }, data: { password: newPassword } });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to change password' });
+    }
+});
+
+// --- Enhanced Dashboard Stats ---
+app.get('/api/dashboard/:role/:userId', async (req, res) => {
+    const { role, userId } = req.params;
+    try {
+        if (role === 'admin') {
+            const [students, teachers, classes, subjects, assignments, announcements] = await Promise.all([
+                prisma.user.count({ where: { role: 'STUDENT' } }),
+                prisma.user.count({ where: { role: 'TEACHER' } }),
+                prisma.class.count(),
+                prisma.subject.count(),
+                prisma.assignment.count(),
+                prisma.announcement.count(),
+            ]);
+            const recentActivity = await prisma.notification.findMany({
+                orderBy: { createdAt: 'desc' }, take: 8,
+                select: { title: true, message: true, type: true, createdAt: true }
+            });
+            res.json({ students, teachers, classes, subjects, assignments, announcements, recentActivity });
+        } else if (role === 'teacher') {
+            const [subjects, classes, assignments, liveClasses] = await Promise.all([
+                prisma.subject.count({ where: { teacherId: userId } }),
+                prisma.class.count({ where: { subjects: { some: { teacherId: userId } } } }),
+                prisma.assignment.count({ where: { subject: { teacherId: userId } } }),
+                prisma.liveClass.count({ where: { teacherId: userId, startTime: { gte: new Date() } } }),
+            ]);
+            const recentSubmissions = await prisma.assignmentSubmission.findMany({
+                where: { assignment: { subject: { teacherId: userId } } },
+                orderBy: { submittedAt: 'desc' }, take: 5,
+                include: { student: { select: { name: true } }, assignment: { select: { title: true } } }
+            });
+            res.json({ subjects, classes, assignments, liveClasses, recentSubmissions });
+        } else {
+            const user = await prisma.user.findUnique({ where: { id: userId }, include: { class: { include: { subjects: true } } } });
+            const subjectIds = user?.class?.subjects?.map(s => s.id) || [];
+            const [assignmentsDue, completedAssignments, upcomingClasses] = await Promise.all([
+                prisma.assignment.count({ where: { subjectId: { in: subjectIds }, dueDate: { gte: new Date() } } }),
+                prisma.assignmentSubmission.count({ where: { studentId: userId } }),
+                prisma.liveClass.count({ where: { subjectId: { in: subjectIds }, startTime: { gte: new Date() } } }),
+            ]);
+            const quizAttempts = await prisma.quizAttempt.findMany({ where: { studentId: userId } });
+            const avgGrade = quizAttempts.length > 0
+                ? Math.round(quizAttempts.reduce((s, a) => s + (a.score / a.maxScore) * 100, 0) / quizAttempts.length)
+                : 0;
+            const recentActivity = await prisma.notification.findMany({
+                where: { userId }, orderBy: { createdAt: 'desc' }, take: 5,
+                select: { title: true, message: true, type: true, createdAt: true }
+            });
+            res.json({ assignmentsDue, completedAssignments, upcomingClasses, avgGrade, quizzesTaken: quizAttempts.length, recentActivity });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch dashboard' });
     }
 });
 

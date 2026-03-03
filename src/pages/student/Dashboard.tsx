@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen, Clock, Trophy, ArrowRight, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { BookOpen, Clock, Trophy, ArrowRight, Loader2, CheckCircle2, AlertCircle, ClipboardList, Video, TrendingUp } from 'lucide-react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 
 interface Quiz {
@@ -193,11 +193,41 @@ export default function StudentDashboard({ user }: { user: any }) {
         )
     }
 
+    // Fetch dashboard stats
+    const { data: dashboard } = useQuery({
+        queryKey: ['student-dashboard', user.id],
+        queryFn: async () => {
+            const res = await fetch(`/api/dashboard/student/${user.id}`)
+            if (!res.ok) throw new Error('Failed')
+            return res.json()
+        }
+    })
+
+    const quickCards = [
+        { title: 'Assignments Due', value: dashboard?.assignmentsDue || 0, icon: ClipboardList, gradient: 'from-pink-500 to-pink-600' },
+        { title: 'Average Grade', value: `${dashboard?.avgGrade || 0}%`, icon: TrendingUp, gradient: 'from-emerald-500 to-emerald-600' },
+        { title: 'Upcoming Classes', value: dashboard?.upcomingClasses || 0, icon: Video, gradient: 'from-violet-500 to-violet-600' },
+        { title: 'Quizzes Taken', value: dashboard?.quizzesTaken || 0, icon: Trophy, gradient: 'from-amber-500 to-amber-600' },
+    ]
+
     return (
         <div className="animate-fade-in text-slate-700">
-            <div className="page-header mb-10">
-                <h1 className="page-title text-primary-500">Welcome back, {user.name}!</h1>
+            <div className="page-header mb-6">
+                <h1 className="page-title text-primary-500">Welcome back, {user.name}! 👋</h1>
                 <p className="page-subtitle">Pick up where you left off or start a new assessment.</p>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {quickCards.map((card, i) => (
+                    <div key={i} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 hover:shadow-md transition-all group">
+                        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-2.5 shadow-sm group-hover:scale-110 transition-transform`}>
+                            <card.icon className="w-4 h-4 text-white" />
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-800">{card.value}</h2>
+                        <p className="text-xs text-slate-500 font-medium">{card.title}</p>
+                    </div>
+                ))}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -258,29 +288,28 @@ export default function StudentDashboard({ user }: { user: any }) {
                     <div className="content-card p-6 bg-gradient-to-br from-primary-600 to-primary-800 text-white border-none shadow-primary-xl">
                         <Trophy className="w-10 h-10 mb-4 opacity-50" />
                         <p className="text-primary-100 text-sm font-medium mb-1">Average Score</p>
-                        <h3 className="text-3xl font-bold mb-6">85% <span className="text-sm font-normal text-primary-200 ml-1">Overall</span></h3>
+                        <h3 className="text-3xl font-bold mb-6">{dashboard?.avgGrade || 0}% <span className="text-sm font-normal text-primary-200 ml-1">Overall</span></h3>
                         <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
-                            <div className="h-full bg-white w-[85%]" />
+                            <div className="h-full bg-white transition-all duration-500" style={{ width: `${dashboard?.avgGrade || 0}%` }} />
                         </div>
                     </div>
 
                     <div className="content-card p-6">
-                        <h4 className="font-bold text-slate-800 mb-4">Upcoming Deadlines</h4>
+                        <h4 className="font-bold text-slate-800 mb-4">Recent Activity</h4>
                         <div className="space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-warning-500" />
-                                <div className="flex-1">
-                                    <p className="text-sm font-semibold text-slate-700">Math Quiz - Algebra</p>
-                                    <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Due in 2 days</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-danger-500" />
-                                <div className="flex-1">
-                                    <p className="text-sm font-semibold text-slate-700">ICT Assessment</p>
-                                    <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Due Today</p>
-                                </div>
-                            </div>
+                            {(dashboard?.recentActivity || []).length === 0 ? (
+                                <p className="text-sm text-slate-400 text-center py-4">No recent activity</p>
+                            ) : (
+                                (dashboard?.recentActivity || []).map((act: any, i: number) => (
+                                    <div key={i} className="flex items-center gap-3">
+                                        <div className={`w-2 h-2 rounded-full ${act.type === 'assignment' ? 'bg-warning-500' : 'bg-primary-500'}`} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-slate-700 truncate">{act.title}</p>
+                                            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">{new Date(act.createdAt).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>

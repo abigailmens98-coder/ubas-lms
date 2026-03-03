@@ -24,6 +24,7 @@ import StudentSubjects from './pages/student/MySubjects'
 import StudentAssignments from './pages/student/Assignments'
 import StudentLiveClasses from './pages/student/LiveClasses'
 import StudentGrades from './pages/student/Grades'
+import Profile from './pages/Profile'
 
 export type UserRole = 'admin' | 'teacher' | 'student'
 
@@ -60,7 +61,12 @@ function App() {
         }
     }
 
-    const handleLogout = () => setUser(null)
+    const handleLogout = () => { setUser(null); localStorage.removeItem('ubas_user') }
+
+    const handleUpdateUser = (updatedUser: User) => {
+        setUser(updatedUser)
+        localStorage.setItem('ubas_user', JSON.stringify(updatedUser))
+    }
 
     if (!user) {
         return <Login onLogin={handleLogin} />
@@ -79,6 +85,7 @@ function App() {
                     <Route path="terms" element={<AdminTerms />} />
                     <Route path="timetable" element={<AdminTimetable />} />
                     <Route path="announcements" element={<AdminAnnouncements user={user} />} />
+                    <Route path="profile" element={<Profile user={user} onUpdateUser={handleUpdateUser} />} />
                 </Route>
             )}
 
@@ -93,6 +100,7 @@ function App() {
                     <Route path="assignments" element={<TeacherAssignments user={user} />} />
                     <Route path="quizzes" element={<TeacherQuizzes />} />
                     <Route path="live-classes" element={<TeacherLiveClasses user={user} />} />
+                    <Route path="profile" element={<Profile user={user} onUpdateUser={handleUpdateUser} />} />
                 </Route>
             )}
 
@@ -105,6 +113,7 @@ function App() {
                     <Route path="assignments" element={<StudentAssignments user={user} />} />
                     <Route path="live-classes" element={<StudentLiveClasses user={user} />} />
                     <Route path="grades" element={<StudentGrades user={user} />} />
+                    <Route path="profile" element={<Profile user={user} onUpdateUser={handleUpdateUser} />} />
                 </Route>
             )}
 
