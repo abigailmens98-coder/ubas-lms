@@ -317,11 +317,20 @@ app.post('/api/ai/generate-quiz', async (req, res) => {
     try {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
-        const prompt = `Generate a quiz about "${subject} - ${lesson}" for ${difficulty} level. 
-    Total questions: ${count}. 
-    Question types: ${Object.entries(types).filter(([_, v]) => v).map(([k]) => k).join(", ")}.
-    Return the response ONLY as a JSON array of objects with the following structure:
-    [{ "text": "Question here", "type": "multiple_choice", "options": ["A", "B", "C", "D"], "correctAnswer": "A", "explanation": "Why?" }]`
+        const prompt = `You are an expert Ghana Basic School curriculum quiz generator following the Ghana Education Service (GES) National Pre-Tertiary Education Curriculum Framework.
+
+Generate a quiz about "${subject} - ${lesson}" for ${difficulty} level students in a Ghana Basic School. 
+Total questions: ${count}. 
+Question types: ${Object.entries(types).filter(([_, v]) => v).map(([k]) => k).join(", ")}.
+
+GUIDELINES:
+- Questions must align with the Ghana Basic School curriculum standards
+- Use language and examples relevant to Ghanaian students
+- Test knowledge, understanding, application, and analysis
+- Include a mix of difficulty levels within the specified range
+
+Return the response ONLY as a JSON array of objects with the following structure:
+[{ "text": "Question here", "type": "multiple_choice", "options": ["A) opt1", "B) opt2", "C) opt3", "D) opt4"], "correctAnswer": "A) opt1", "explanation": "Why?" }]`
 
         const result = await model.generateContent(prompt)
         const response = await result.response
@@ -335,6 +344,64 @@ app.post('/api/ai/generate-quiz', async (req, res) => {
     } catch (error) {
         console.error("AI Error:", error)
         res.status(500).json({ message: "AI failed to generate quiz" })
+    }
+})
+
+// --- AI Quiz Generation from PDF ---
+app.post('/api/ai/generate-quiz-from-pdf', upload.single('pdf'), async (req, res) => {
+    if (!process.env.GEMINI_API_KEY) {
+        return res.status(500).json({ message: "Gemini API Key missing in .env" })
+    }
+    if (!req.file) {
+        return res.status(400).json({ message: "No PDF uploaded" })
+    }
+
+    const { subject, difficulty, count, classLevel } = req.body
+
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+
+        // Read PDF as base64
+        const pdfBuffer = fs.readFileSync(req.file.path)
+        const pdfBase64 = pdfBuffer.toString('base64')
+
+        const prompt = `You are an expert Ghana Basic School curriculum quiz generator. 
+Analyze the attached PDF document content and generate ${count || 10} quiz questions based on it.
+
+Subject: ${subject || 'General'}
+Class Level: ${classLevel || 'JHS'}
+Difficulty: ${difficulty || 'Medium'}
+
+IMPORTANT GUIDELINES - Following Ghana Education Service (GES) National Pre-Tertiary Education Curriculum Framework:
+- Questions must be age-appropriate for ${classLevel || 'JHS'} students in Ghana
+- Align with the Ghana Basic School curriculum standards and competencies
+- Include questions that test knowledge, understanding, application, and analysis
+- Use language and examples relevant to Ghanaian students  
+- For JHS: Focus on analytical thinking and application
+- For Primary: Focus on recall and basic understanding
+- Include a mix of easy, medium, and challenging questions
+
+Return ONLY a JSON array (no markdown, no explanation) with this exact structure:
+[{ "text": "Question text here", "type": "multiple_choice", "options": ["A) option1", "B) option2", "C) option3", "D) option4"], "correctAnswer": "A) option1", "explanation": "Brief explanation why this is correct" }]`
+
+        const result = await model.generateContent([
+            { text: prompt },
+            { inlineData: { mimeType: 'application/pdf', data: pdfBase64 } }
+        ])
+        const response = await result.response
+        const text = response.text()
+
+        const cleanJson = text.replace(/```json|```/g, "").trim()
+        const questions = JSON.parse(cleanJson)
+
+        // Clean up uploaded PDF
+        fs.unlinkSync(req.file.path)
+
+        res.json({ questions })
+    } catch (error) {
+        console.error("AI PDF Error:", error)
+        if (req.file?.path) try { fs.unlinkSync(req.file.path) } catch { }
+        res.status(500).json({ message: "AI failed to generate quiz from PDF" })
     }
 })
 
@@ -393,12 +460,73 @@ app.get('/api/quizzes/:id', async (req, res) => {
     }
 })
 
+// Create a new quiz
+app.post('/api/quizzes', async (req, res) => {
+    const { title, duration, status, subjectId, questions } = req.body;
+    try {
+        const quiz = await prisma.quiz.create({
+            data: {
+                title,
+                duration: duration || 30,
+                status: status || 'published',
+                subjectId,
+                questions: {
+                    create: (questions || []).map((q) => ({
+                        text: q.text,
+                        type: q.type || 'multiple_choice',
+                        options: q.options || [],
+                        correctAnswer: q.correctAnswer,
+                        explanation: q.explanation || ''
+                    }))
+                }
+            },
+            include: { subject: { select: { name: true, classes: { include: { students: { select: { id: true } } } } } }, _count: { select: { questions: true } } }
+        });
+
+        // Notify students if quiz is published
+        if (quiz.status === 'published' && quiz.subject?.classes) {
+            const studentIds = quiz.subject.classes.flatMap(c => c.students.map(s => s.id));
+            const uniqueIds = [...new Set(studentIds)];
+            if (uniqueIds.length > 0) {
+                await prisma.notification.createMany({
+                    data: uniqueIds.map(sid => ({
+                        userId: sid,
+                        title: 'New Quiz Available',
+                        message: `"${title}" has been published in ${quiz.subject.name}. Take it now!`,
+                        type: 'quiz',
+                        link: '/'
+                    }))
+                });
+            }
+        }
+
+        res.status(201).json(quiz);
+    } catch (error) {
+        console.error('Quiz create error:', error);
+        res.status(500).json({ error: 'Failed to create quiz' });
+    }
+});
+
 app.post('/api/quizzes/submit', async (req, res) => {
     const { quizId, studentId, score, maxScore } = req.body
     try {
         const attempt = await prisma.quizAttempt.create({
             data: { quizId, studentId, score, maxScore }
         })
+        // Notify the teacher
+        const quiz = await prisma.quiz.findUnique({ where: { id: quizId }, include: { subject: { select: { teacherId: true, name: true } } } });
+        const student = await prisma.user.findUnique({ where: { id: studentId }, select: { name: true } });
+        if (quiz?.subject?.teacherId) {
+            await prisma.notification.create({
+                data: {
+                    userId: quiz.subject.teacherId,
+                    title: 'Quiz Completed',
+                    message: `${student?.name} scored ${score}/${maxScore} on ${quiz.title}`,
+                    type: 'quiz',
+                    link: '/quizzes'
+                }
+            });
+        }
         res.status(201).json(attempt)
     } catch (error) {
         res.status(500).json({ error: 'Failed to save quiz attempt' })
@@ -436,6 +564,17 @@ app.post('/api/messages', async (req, res) => {
     try {
         const newMessage = await prisma.message.create({
             data: { senderId, receiverId, content }
+        });
+        // Create notification for receiver
+        const sender = await prisma.user.findUnique({ where: { id: senderId }, select: { name: true } });
+        await prisma.notification.create({
+            data: {
+                userId: receiverId,
+                title: 'New Message',
+                message: `${sender?.name || 'Someone'} sent you a message`,
+                type: 'message',
+                link: '/messages'
+            }
         });
         res.status(201).json(newMessage);
     } catch (error) {
@@ -527,6 +666,24 @@ app.post('/api/assignments', async (req, res) => {
             }))
         });
 
+        // Notify students in classes linked to this subject
+        const subject = await prisma.subject.findUnique({
+            where: { id: assignment.subjectId },
+            include: { classes: { include: { students: { select: { id: true } } } } }
+        });
+        if (subject) {
+            const studentIds = subject.classes.flatMap(c => c.students.map(s => s.id));
+            const uniqueIds = [...new Set(studentIds)];
+            await prisma.notification.createMany({
+                data: uniqueIds.map(sid => ({
+                    userId: sid,
+                    title: 'New Assignment',
+                    message: `"${assignment.title}" has been posted in ${subject.name}`,
+                    type: 'assignment',
+                    link: '/assignments'
+                }))
+            });
+        }
         res.status(201).json(assignment);
     } catch (error) {
         console.error(error);
@@ -576,8 +733,22 @@ app.post('/api/live-classes', async (req, res) => {
     try {
         const liveClass = await prisma.liveClass.create({
             data: { title, topic, startTime: new Date(startTime), duration, joinUrl, subjectId, teacherId },
-            include: { subject: { select: { name: true, color: true } }, teacher: { select: { name: true } } }
+            include: { subject: { select: { name: true, color: true, classes: { include: { students: { select: { id: true } } } } } }, teacher: { select: { name: true } } }
         });
+        // Notify students
+        const studentIds = liveClass.subject?.classes?.flatMap(c => c.students.map(s => s.id)) || [];
+        const uniqueIds = [...new Set(studentIds)];
+        if (uniqueIds.length > 0) {
+            await prisma.notification.createMany({
+                data: uniqueIds.map(sid => ({
+                    userId: sid,
+                    title: 'Live Class Scheduled',
+                    message: `${liveClass.teacher?.name} scheduled "${title}" on ${new Date(startTime).toLocaleDateString()}`,
+                    type: 'live_class',
+                    link: '/live-classes'
+                }))
+            });
+        }
         res.status(201).json(liveClass);
     } catch (error) {
         res.status(500).json({ error: 'Failed' });

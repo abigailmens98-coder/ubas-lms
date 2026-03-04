@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trophy, Sparkles, X, Clock, Users, Loader2, Download } from 'lucide-react'
+import { Plus, Trophy, Sparkles, X, Clock, Users, Loader2, Download, FileUp, BookOpen } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
@@ -15,6 +15,8 @@ export default function TeacherQuizzes() {
     const [showAIModal, setShowAIModal] = useState(false)
     const [isGenerating, setIsGenerating] = useState(false)
     const [generatedQuestions, setGeneratedQuestions] = useState<any[]>([])
+    const [aiMode, setAiMode] = useState<'text' | 'pdf'>('text')
+    const [pdfFile, setPdfFile] = useState<File | null>(null)
 
     const [aiForm, setAiForm] = useState({
         subject: 'Computing',
@@ -22,6 +24,7 @@ export default function TeacherQuizzes() {
         questionTypes: { multipleChoice: true, trueFalse: false, shortAnswer: false },
         numberOfQuestions: 5,
         difficulty: 'Medium',
+        classLevel: 'JHS 1',
     })
 
     const { data: quizzes = [], isLoading } = useQuery({
@@ -57,6 +60,36 @@ export default function TeacherQuizzes() {
         } catch (err) {
             console.error(err)
             alert('AI Generation failed. Check your API key in .env')
+        } finally {
+            setIsGenerating(false)
+        }
+    }
+
+    const handleGenerateFromPDF = async () => {
+        if (!pdfFile) return
+        setIsGenerating(true)
+        try {
+            const formData = new FormData()
+            formData.append('pdf', pdfFile)
+            formData.append('subject', aiForm.subject)
+            formData.append('difficulty', aiForm.difficulty)
+            formData.append('count', String(aiForm.numberOfQuestions))
+            formData.append('classLevel', aiForm.classLevel)
+
+            const res = await fetch('/api/ai/generate-quiz-from-pdf', {
+                method: 'POST',
+                body: formData
+            })
+
+            if (!res.ok) throw new Error('PDF quiz generation failed')
+            const data = await res.json()
+            setGeneratedQuestions(data.questions)
+            alert(`AI generated ${data.questions.length} questions from your PDF! Aligned with Ghana ${aiForm.classLevel} curriculum.`)
+            setShowAIModal(false)
+            setPdfFile(null)
+        } catch (err) {
+            console.error(err)
+            alert('Failed to generate quiz from PDF. Please try again.')
         } finally {
             setIsGenerating(false)
         }
@@ -100,20 +133,20 @@ export default function TeacherQuizzes() {
     }
 
     return (
-        <div className="animate-fade-in text-slate-700 p-6">
-            <div className="flex items-start justify-between mb-8">
+        <div className="animate-fade-in text-slate-700 p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
                 <div className="page-header mb-0">
                     <h1 className="text-2xl font-bold text-slate-800">Quizzes</h1>
-                    <p className="text-slate-500">Create and manage quizzes</p>
+                    <p className="text-slate-500">Create and manage quizzes — aligned with Ghana Basic School curriculum</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button onClick={() => setShowAIModal(true)} className="px-4 py-2 bg-purple-500 text-white rounded-xl shadow-sm hover:bg-purple-600 transition-colors flex items-center gap-2 font-medium">
+                    <button onClick={() => { setShowAIModal(true); setAiMode('pdf') }} className="px-4 py-2 bg-amber-500 text-white rounded-xl shadow-sm hover:bg-amber-600 transition-colors flex items-center gap-2 font-medium text-sm">
+                        <FileUp className="w-4 h-4" />
+                        Upload PDF
+                    </button>
+                    <button onClick={() => { setShowAIModal(true); setAiMode('text') }} className="px-4 py-2 bg-purple-500 text-white rounded-xl shadow-sm hover:bg-purple-600 transition-colors flex items-center gap-2 font-medium text-sm">
                         <Sparkles className="w-4 h-4" />
                         Generate AI
-                    </button>
-                    <button className="px-4 py-2 bg-success-500 text-white rounded-xl shadow-sm hover:bg-success-600 transition-colors flex items-center gap-2 font-medium">
-                        <Plus className="w-4 h-4" />
-                        New Quiz
                     </button>
                 </div>
             </div>
@@ -129,7 +162,7 @@ export default function TeacherQuizzes() {
                             No quizzes found. Create one or generate with AI.
                         </div>
                     )}
-                    {quizzes.map((quiz: any, index: number) => (
+                    {quizzes.map((quiz: any) => (
                         <div key={quiz.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 group hover:shadow-md transition-all duration-300">
                             <div className="flex items-start justify-between mb-3">
                                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${quiz.subject?.color || 'from-primary-400 to-primary-600'} flex items-center justify-center shadow-md`}>
@@ -161,42 +194,104 @@ export default function TeacherQuizzes() {
             )}
 
             {showAIModal && (
-                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8">
-                        <div className="flex items-center justify-between mb-8">
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between mb-6">
                             <div>
-                                <h2 className="text-xl font-bold text-slate-800">Generate Quiz with AI</h2>
-                                <p className="text-sm text-slate-500 mt-1">Let AI create a quiz based on your topic</p>
+                                <h2 className="text-xl font-bold text-slate-800">
+                                    {aiMode === 'pdf' ? '📄 Generate from PDF' : '✨ Generate with AI'}
+                                </h2>
+                                <p className="text-sm text-slate-500 mt-1">
+                                    {aiMode === 'pdf' ? 'Upload a PDF and AI will create quiz questions from it' : 'AI creates quiz aligned with Ghana Basic School curriculum'}
+                                </p>
                             </div>
                             <button onClick={() => !isGenerating && setShowAIModal(false)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors" disabled={isGenerating}>
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <div className="space-y-6">
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Subject</label>
-                                <select value={aiForm.subject} onChange={(e) => setAiForm({ ...aiForm, subject: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-slate-50" disabled={isGenerating}>
-                                    <option value="Computing">Computing</option>
-                                    <option value="Mathematics">Mathematics</option>
-                                    <option value="Integrated Science">Integrated Science</option>
-                                    <option value="English Language">English Language</option>
-                                </select>
-                            </div>
+                        {/* Mode Tabs */}
+                        <div className="flex gap-2 mb-6 p-1 bg-slate-100 rounded-xl">
+                            <button onClick={() => setAiMode('text')} className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${aiMode === 'text' ? 'bg-white shadow-sm text-purple-600' : 'text-slate-500'}`}>
+                                <Sparkles className="w-4 h-4 inline mr-1" /> By Topic
+                            </button>
+                            <button onClick={() => setAiMode('pdf')} className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${aiMode === 'pdf' ? 'bg-white shadow-sm text-amber-600' : 'text-slate-500'}`}>
+                                <FileUp className="w-4 h-4 inline mr-1" /> From PDF
+                            </button>
+                        </div>
 
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Topic / Lesson Content</label>
-                                <textarea placeholder="e.g. Parts of a Computer, Solar System, etc." value={aiForm.lesson} onChange={(e) => setAiForm({ ...aiForm, lesson: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-slate-50 h-28 resize-none" disabled={isGenerating} />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-5">
+                        <div className="space-y-5">
+                            <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Questions count</label>
-                                    <input type="number" value={aiForm.numberOfQuestions} onChange={(e) => setAiForm({ ...aiForm, numberOfQuestions: parseInt(e.target.value) })} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-slate-50" disabled={isGenerating} />
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Subject</label>
+                                    <select value={aiForm.subject} onChange={(e) => setAiForm({ ...aiForm, subject: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-slate-50 text-sm" disabled={isGenerating}>
+                                        <option value="Computing">Computing</option>
+                                        <option value="Mathematics">Mathematics</option>
+                                        <option value="Integrated Science">Integrated Science</option>
+                                        <option value="English Language">English Language</option>
+                                        <option value="Social Studies">Social Studies</option>
+                                        <option value="French">French</option>
+                                        <option value="Ghanaian Language">Ghanaian Language</option>
+                                        <option value="Creative Arts">Creative Arts</option>
+                                        <option value="Religious & Moral Education">Religious & Moral Education</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Class Level</label>
+                                    <select value={aiForm.classLevel} onChange={(e) => setAiForm({ ...aiForm, classLevel: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-slate-50 text-sm" disabled={isGenerating}>
+                                        <option value="Primary 1">Primary 1</option>
+                                        <option value="Primary 2">Primary 2</option>
+                                        <option value="Primary 3">Primary 3</option>
+                                        <option value="Primary 4">Primary 4</option>
+                                        <option value="Primary 5">Primary 5</option>
+                                        <option value="Primary 6">Primary 6</option>
+                                        <option value="JHS 1">JHS 1</option>
+                                        <option value="JHS 2">JHS 2</option>
+                                        <option value="JHS 3">JHS 3</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {aiMode === 'text' ? (
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Topic / Lesson Content</label>
+                                    <textarea placeholder="e.g. Parts of a Computer, Solar System, Ghana Independence..." value={aiForm.lesson} onChange={(e) => setAiForm({ ...aiForm, lesson: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-slate-50 h-28 resize-none text-sm" disabled={isGenerating} />
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Upload PDF Document</label>
+                                    <div className={`border-2 border-dashed rounded-2xl p-6 text-center transition-colors ${pdfFile ? 'border-amber-300 bg-amber-50' : 'border-slate-200 hover:border-purple-300 bg-slate-50'}`}>
+                                        {pdfFile ? (
+                                            <div className="flex items-center justify-center gap-3">
+                                                <BookOpen className="w-8 h-8 text-amber-500" />
+                                                <div className="text-left">
+                                                    <p className="font-semibold text-slate-800 text-sm">{pdfFile.name}</p>
+                                                    <p className="text-xs text-slate-400">{(pdfFile.size / 1024).toFixed(1)} KB</p>
+                                                </div>
+                                                <button onClick={() => setPdfFile(null)} className="p-1 rounded-lg hover:bg-amber-100">
+                                                    <X className="w-4 h-4 text-slate-400" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <label className="cursor-pointer">
+                                                <FileUp className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                                                <p className="text-sm font-semibold text-slate-600">Click to upload PDF</p>
+                                                <p className="text-xs text-slate-400 mt-1">Textbooks, notes, lesson plans, etc.</p>
+                                                <input type="file" accept=".pdf" className="hidden" onChange={(e) => { if (e.target.files?.[0]) setPdfFile(e.target.files[0]) }} disabled={isGenerating} />
+                                            </label>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Questions</label>
+                                    <input type="number" min={1} max={30} value={aiForm.numberOfQuestions} onChange={(e) => setAiForm({ ...aiForm, numberOfQuestions: parseInt(e.target.value) })} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-slate-50 text-sm" disabled={isGenerating} />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-2">Difficulty</label>
-                                    <select value={aiForm.difficulty} onChange={(e) => setAiForm({ ...aiForm, difficulty: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-slate-50" disabled={isGenerating}>
+                                    <select value={aiForm.difficulty} onChange={(e) => setAiForm({ ...aiForm, difficulty: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-slate-50 text-sm" disabled={isGenerating}>
                                         <option value="Easy">Easy (Beginner)</option>
                                         <option value="Medium">Medium (Intermediate)</option>
                                         <option value="Hard">Hard (Advanced)</option>
@@ -205,10 +300,14 @@ export default function TeacherQuizzes() {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3 mt-10 pt-6 border-t border-slate-100">
+                        <div className="flex items-center gap-3 mt-8 pt-6 border-t border-slate-100">
                             <button onClick={() => setShowAIModal(false)} className="flex-1 py-3 px-4 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors" disabled={isGenerating}>Cancel</button>
-                            <button onClick={handleGenerateAI} className="flex-1 py-3 px-4 rounded-xl font-semibold text-white bg-purple-500 hover:bg-purple-600 shadow-md transition-colors flex justify-center items-center disabled:opacity-50" disabled={isGenerating || !aiForm.lesson}>
-                                {isGenerating ? <><Loader2 className="w-5 h-5 animate-spin mr-2" />Generating...</> : <><Sparkles className="w-5 h-5 mr-2" />Generate Quiz</>}
+                            <button
+                                onClick={aiMode === 'pdf' ? handleGenerateFromPDF : handleGenerateAI}
+                                className={`flex-1 py-3 px-4 rounded-xl font-semibold text-white shadow-md transition-colors flex justify-center items-center disabled:opacity-50 ${aiMode === 'pdf' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-purple-500 hover:bg-purple-600'}`}
+                                disabled={isGenerating || (aiMode === 'text' && !aiForm.lesson) || (aiMode === 'pdf' && !pdfFile)}
+                            >
+                                {isGenerating ? <><Loader2 className="w-5 h-5 animate-spin mr-2" />Generating...</> : aiMode === 'pdf' ? <><FileUp className="w-5 h-5 mr-2" />Generate from PDF</> : <><Sparkles className="w-5 h-5 mr-2" />Generate Quiz</>}
                             </button>
                         </div>
                     </div>

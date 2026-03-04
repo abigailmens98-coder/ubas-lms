@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Video, Clock, Loader2, Calendar } from 'lucide-react'
+import { Video, Clock, Loader2, Calendar, Play } from 'lucide-react'
+import VideoRoom from '../../components/VideoRoom'
 
 export default function StudentLiveClasses({ user }: { user: any }) {
     const [currentTime, setCurrentTime] = useState(new Date())
+    const [activeRoom, setActiveRoom] = useState<string | null>(null)
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000)
@@ -19,27 +21,35 @@ export default function StudentLiveClasses({ user }: { user: any }) {
         }
     })
 
+    const isWebRTCRoom = (url: string) => url.startsWith('webrtc://')
+    const getRoomId = (url: string) => url.replace('webrtc://', '')
+
+    if (activeRoom) {
+        return <VideoRoom roomId={activeRoom} userName={user.name} onLeave={() => setActiveRoom(null)} />
+    }
+
     if (isLoading) {
         return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
     }
 
     return (
-        <div className="p-6 text-slate-700 animate-fade-in">
-            <h1 className="text-2xl font-bold mb-2 text-slate-800">Live Classes</h1>
-            <p className="text-slate-500 mb-8">Join your upcoming scheduled sessions</p>
+        <div className="p-4 lg:p-6 text-slate-700 animate-fade-in">
+            <h1 className="text-2xl font-bold mb-1 text-slate-800">Live Classes</h1>
+            <p className="text-slate-500 text-sm mb-8">Join your upcoming scheduled sessions</p>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {classes.length === 0 && (
                     <div className="col-span-full p-12 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
                         <Video className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                         <h2 className="text-lg font-semibold text-slate-700">No Upcoming Classes</h2>
-                        <p className="text-slate-500">Enjoy your free time!</p>
+                        <p className="text-slate-500 text-sm">Enjoy your free time!</p>
                     </div>
                 )}
                 {classes.map((c: any) => {
                     const startTime = new Date(c.startTime)
                     const isLive = currentTime >= startTime && currentTime <= new Date(startTime.getTime() + c.duration * 60000)
                     const isUpcoming = currentTime < startTime
+                    const isInApp = isWebRTCRoom(c.joinUrl)
 
                     let timeRemaining = ''
                     if (isUpcoming) {
@@ -69,9 +79,9 @@ export default function StudentLiveClasses({ user }: { user: any }) {
                             </div>
 
                             <h3 className="text-lg font-bold text-slate-800 mb-1">{c.title}</h3>
-                            <p className="text-sm font-medium text-slate-500 mb-6">{c.subject?.name}</p>
+                            <p className="text-sm font-medium text-slate-500 mb-6">{c.subject?.name} • {c.teacher?.name}</p>
 
-                            <div className="space-y-3 mb-8">
+                            <div className="space-y-3 mb-6">
                                 <div className="flex items-center gap-3 text-sm text-slate-600">
                                     <Clock className="w-4 h-4" />
                                     <span className="font-semibold">{startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({c.duration}m)</span>
@@ -87,15 +97,26 @@ export default function StudentLiveClasses({ user }: { user: any }) {
                             </div>}
 
                             <div className="mt-auto">
-                                <a
-                                    href={c.joinUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className={`w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm
-                                        ${isLive ? 'bg-primary-500 text-white hover:bg-primary-600' : 'bg-slate-100 text-slate-400 pointer-events-none'}`}
-                                >
-                                    Join Class
-                                </a>
+                                {isInApp ? (
+                                    <button
+                                        onClick={() => isLive && setActiveRoom(getRoomId(c.joinUrl))}
+                                        className={`w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm text-sm
+                                            ${isLive ? 'bg-gradient-to-r from-success-500 to-success-600 text-white hover:shadow-lg' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
+                                        disabled={!isLive}
+                                    >
+                                        <Play className="w-4 h-4" /> {isLive ? 'Join Class' : 'Not Started Yet'}
+                                    </button>
+                                ) : (
+                                    <a
+                                        href={isLive ? c.joinUrl : undefined}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className={`w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm text-sm
+                                            ${isLive ? 'bg-primary-500 text-white hover:bg-primary-600' : 'bg-slate-100 text-slate-400 pointer-events-none'}`}
+                                    >
+                                        <Video className="w-4 h-4" /> {isLive ? 'Join External Link' : 'Not Started Yet'}
+                                    </a>
+                                )}
                             </div>
                         </div>
                     )
