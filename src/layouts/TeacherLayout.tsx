@@ -12,7 +12,6 @@ import {
     Trophy,
     Video,
     Menu,
-    CheckSquare,
 } from 'lucide-react'
 import Notifications from '../components/Notifications'
 
@@ -30,7 +29,6 @@ const teacherNavItems = [
     { label: 'Assignments', path: '/assignments', icon: ClipboardList },
     { label: 'Quizzes', path: '/quizzes', icon: Trophy, hasSubmenu: true },
     { label: 'Live Classes', path: '/live-classes', icon: Video },
-    { label: 'Attendance', path: '/attendance', icon: CheckSquare },
 ]
 
 export default function TeacherLayout({ user, onLogout }: TeacherLayoutProps) {

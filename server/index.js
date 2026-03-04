@@ -533,6 +533,116 @@ app.post('/api/quizzes/submit', async (req, res) => {
     }
 })
 
+// Get student's quiz attempts
+app.get('/api/quizzes/student/:studentId/attempts', async (req, res) => {
+    try {
+        const attempts = await prisma.quizAttempt.findMany({
+            where: { studentId: req.params.studentId },
+            include: { quiz: { select: { title: true } } },
+            orderBy: { completedAt: 'desc' }
+        });
+        res.json(attempts);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch attempts' });
+    }
+});
+
+// --- Invite Link ---
+app.post('/api/invite-link', async (req, res) => {
+    const { role, classId } = req.body;
+    // Generate a unique token-based invite link
+    const token = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    // Store in memory (for production use a DB table)
+    if (!global.inviteLinks) global.inviteLinks = {};
+    global.inviteLinks[token] = { role: role || 'student', classId, createdAt: new Date() };
+
+    const baseUrl = req.headers.origin || `${req.protocol}://${req.get('host')}`;
+    const link = `${baseUrl}/register?invite=${token}`;
+    res.json({ link, token });
+});
+
+// Validate invite link
+app.get('/api/invite/:token', async (req, res) => {
+    if (!global.inviteLinks?.[req.params.token]) {
+        return res.status(404).json({ error: 'Invalid or expired invite link' });
+    }
+    res.json(global.inviteLinks[req.params.token]);
+});
+
+// Register via invite link
+app.post('/api/register', async (req, res) => {
+    const { name, email, password, token } = req.body;
+    try {
+        const invite = global.inviteLinks?.[token];
+        if (!invite) return res.status(400).json({ error: 'Invalid invite link' });
+
+        const existing = await prisma.user.findUnique({ where: { email } });
+        if (existing) return res.status(400).json({ error: 'Email already registered' });
+
+        const user = await prisma.user.create({
+            data: {
+                name, email, password,
+                role: invite.role?.toUpperCase() || 'STUDENT',
+                classId: invite.classId || undefined
+            }
+        });
+        // Remove used token
+        delete global.inviteLinks[token];
+        res.status(201).json(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Registration failed' });
+    }
+});
+
+// --- Edit User (role, class, subjects) ---
+app.patch('/api/users/:id/edit', async (req, res) => {
+    const { role, classId, name } = req.body;
+    try {
+        const updateData = {};
+        if (role) updateData.role = role.toUpperCase();
+        if (name) updateData.name = name;
+        if (classId !== undefined) updateData.classId = classId || null;
+
+        const user = await prisma.user.update({
+            where: { id: req.params.id },
+            data: updateData,
+            include: { class: { select: { name: true, section: true } } }
+        });
+        res.json(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to update user' });
+    }
+});
+
+// Assign subjects to a teacher
+app.patch('/api/users/:id/subjects', async (req, res) => {
+    const { subjectIds } = req.body; // array of subject IDs
+    try {
+        // Clear old assignments and set new ones
+        await prisma.subject.updateMany({
+            where: { teacherId: req.params.id },
+            data: { teacherId: null }
+        });
+        if (subjectIds && subjectIds.length > 0) {
+            await Promise.all(
+                subjectIds.map(sid => prisma.subject.update({
+                    where: { id: sid },
+                    data: { teacherId: req.params.id }
+                }))
+            );
+        }
+        const updated = await prisma.subject.findMany({
+            where: { teacherId: req.params.id }
+        });
+        res.json(updated);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to update subjects' });
+    }
+});
+
 app.get('/api/messages/:userId/:otherUserId', async (req, res) => {
     const { userId, otherUserId } = req.params;
 

@@ -11,6 +11,7 @@ import {
     Video,
     Bell,
     Menu,
+    Trophy,
 } from 'lucide-react'
 import Notifications from '../components/Notifications'
 
@@ -24,6 +25,7 @@ const studentNavItems = [
     { label: 'Messages', path: '/messages', icon: MessageSquare },
     { label: 'My Subjects', path: '/my-subjects', icon: BookOpen },
     { label: 'Assignments', path: '/assignments', icon: ClipboardList },
+    { label: 'Quizzes', path: '/quizzes', icon: Trophy },
     { label: 'Live Classes', path: '/live-classes', icon: Video },
     { label: 'Grades', path: '/grades', icon: Award },
 ]
