@@ -12,6 +12,7 @@ import {
     CalendarClock,
     Bell,
     Menu,
+    CheckSquare,
 } from 'lucide-react'
 import Notifications from '../components/Notifications'
 
@@ -29,6 +30,7 @@ const adminNavItems = [
     { label: 'Terms', path: '/terms', icon: CalendarDays },
     { label: 'Timetable', path: '/timetable', icon: CalendarClock },
     { label: 'Announcements', path: '/announcements', icon: Bell },
+    { label: 'Attendance', path: '/attendance', icon: CheckSquare },
 ]
 
 export default function AdminLayout({ user, onLogout }: AdminLayoutProps) {

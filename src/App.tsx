@@ -25,6 +25,7 @@ import StudentAssignments from './pages/student/Assignments'
 import StudentLiveClasses from './pages/student/LiveClasses'
 import StudentGrades from './pages/student/Grades'
 import Profile from './pages/Profile'
+import Attendance from './pages/teacher/Attendance'
 
 export type UserRole = 'admin' | 'teacher' | 'student'
 
@@ -85,6 +86,7 @@ function App() {
                     <Route path="terms" element={<AdminTerms />} />
                     <Route path="timetable" element={<AdminTimetable />} />
                     <Route path="announcements" element={<AdminAnnouncements user={user} />} />
+                    <Route path="attendance" element={<Attendance user={user} />} />
                     <Route path="profile" element={<Profile user={user} onUpdateUser={handleUpdateUser} />} />
                 </Route>
             )}
@@ -100,6 +102,7 @@ function App() {
                     <Route path="assignments" element={<TeacherAssignments user={user} />} />
                     <Route path="quizzes" element={<TeacherQuizzes />} />
                     <Route path="live-classes" element={<TeacherLiveClasses user={user} />} />
+                    <Route path="attendance" element={<Attendance user={user} />} />
                     <Route path="profile" element={<Profile user={user} onUpdateUser={handleUpdateUser} />} />
                 </Route>
             )}

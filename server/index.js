@@ -703,7 +703,130 @@ app.post('/api/assignments/:id/submit', async (req, res) => {
     }
 });
 
+// Grade a submission
+app.patch('/api/submissions/:id/grade', async (req, res) => {
+    const { grade, feedback } = req.body;
+    try {
+        const submission = await prisma.assignmentSubmission.update({
+            where: { id: req.params.id },
+            data: { grade: parseInt(grade), feedback },
+            include: { student: { select: { id: true, name: true } }, assignment: { select: { title: true } } }
+        });
+        // Notify the student
+        await prisma.notification.create({
+            data: {
+                userId: submission.student.id,
+                title: 'Assignment Graded',
+                message: `Your submission for "${submission.assignment.title}" received ${grade}/100`,
+                type: 'assignment',
+                link: '/assignments'
+            }
+        });
+        res.json(submission);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to grade' });
+    }
+});
+
+// Get submissions for an assignment
+app.get('/api/assignments/:id/submissions', async (req, res) => {
+    try {
+        const submissions = await prisma.assignmentSubmission.findMany({
+            where: { assignmentId: req.params.id },
+            include: { student: { select: { name: true, email: true, avatar: true } } },
+            orderBy: { submittedAt: 'desc' }
+        });
+        res.json(submissions);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
+// --- Attendance ---
+app.get('/api/attendance', async (req, res) => {
+    const { classId, date } = req.query;
+    try {
+        const where = {};
+        if (classId) where.classId = classId;
+        if (date) {
+            const d = new Date(date);
+            d.setHours(0, 0, 0, 0);
+            const nextDay = new Date(d);
+            nextDay.setDate(nextDay.getDate() + 1);
+            where.date = { gte: d, lt: nextDay };
+        }
+        const records = await prisma.attendance.findMany({
+            where,
+            include: { student: { select: { id: true, name: true, avatar: true } } },
+            orderBy: { student: { name: 'asc' } }
+        });
+        res.json(records);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch attendance' });
+    }
+});
+
+app.post('/api/attendance', async (req, res) => {
+    const { records, classId, date, markedById } = req.body;
+    // records: [{ studentId, status }]
+    try {
+        const d = new Date(date);
+        d.setHours(0, 0, 0, 0);
+
+        // Upsert each record
+        const results = await Promise.all(
+            records.map((r) =>
+                prisma.attendance.upsert({
+                    where: {
+                        studentId_classId_date: {
+                            studentId: r.studentId,
+                            classId,
+                            date: d
+                        }
+                    },
+                    update: { status: r.status },
+                    create: {
+                        studentId: r.studentId,
+                        classId,
+                        date: d,
+                        status: r.status,
+                        markedById
+                    }
+                })
+            )
+        );
+        res.json({ saved: results.length });
+    } catch (error) {
+        console.error('Attendance error:', error);
+        res.status(500).json({ error: 'Failed to save attendance' });
+    }
+});
+
+// Attendance summary for a class
+app.get('/api/attendance/summary/:classId', async (req, res) => {
+    try {
+        const records = await prisma.attendance.findMany({
+            where: { classId: req.params.classId },
+            include: { student: { select: { id: true, name: true } } }
+        });
+        // Group by student
+        const summary = {};
+        records.forEach(r => {
+            if (!summary[r.studentId]) summary[r.studentId] = { name: r.student.name, present: 0, absent: 0, late: 0, total: 0 };
+            summary[r.studentId].total++;
+            if (r.status === 'PRESENT') summary[r.studentId].present++;
+            else if (r.status === 'ABSENT') summary[r.studentId].absent++;
+            else if (r.status === 'LATE') summary[r.studentId].late++;
+        });
+        res.json(Object.entries(summary).map(([id, data]) => ({ studentId: id, ...data })));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
 // --- Live Classes ---
+
 app.get('/api/live-classes', async (req, res) => {
     const { role, userId } = req.query;
     try {

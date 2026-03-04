@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Plus, Trophy, Sparkles, X, Clock, Users, Loader2, Download, FileUp, BookOpen } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
+import { Plus, Trophy, Sparkles, X, Clock, Users, Loader2, Download, FileUp, BookOpen, CheckCircle2, Save } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 
@@ -12,11 +12,15 @@ const statusStyles: Record<string, string> = {
 
 export default function TeacherQuizzes() {
     const user = JSON.parse(localStorage.getItem('ubas_user') || '{}')
+    const queryClient = useQueryClient()
     const [showAIModal, setShowAIModal] = useState(false)
     const [isGenerating, setIsGenerating] = useState(false)
     const [generatedQuestions, setGeneratedQuestions] = useState<any[]>([])
     const [aiMode, setAiMode] = useState<'text' | 'pdf'>('text')
     const [pdfFile, setPdfFile] = useState<File | null>(null)
+    const [quizTitle, setQuizTitle] = useState('')
+    const [quizDuration, setQuizDuration] = useState(30)
+    const [publishSubjectId, setPublishSubjectId] = useState('')
 
     const [aiForm, setAiForm] = useState({
         subject: 'Computing',
@@ -35,6 +39,42 @@ export default function TeacherQuizzes() {
             return res.json()
         },
         enabled: !!user?.id
+    })
+
+    // Fetch teacher's subjects for publish
+    const { data: allSubjects = [] } = useQuery({
+        queryKey: ['subjects-all'],
+        queryFn: async () => {
+            const res = await fetch('/api/subjects')
+            if (!res.ok) throw new Error()
+            return res.json()
+        }
+    })
+    const teacherSubjects = allSubjects.filter((s: any) => s.teacherId === user.id)
+
+    const publishMutation = useMutation({
+        mutationFn: async () => {
+            const res = await fetch('/api/quizzes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: quizTitle,
+                    duration: quizDuration,
+                    status: 'published',
+                    subjectId: publishSubjectId,
+                    questions: generatedQuestions
+                })
+            })
+            if (!res.ok) throw new Error('Failed to publish quiz')
+            return res.json()
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['teacher-quizzes'] })
+            setGeneratedQuestions([])
+            setQuizTitle('')
+            setPublishSubjectId('')
+            alert('Quiz published successfully! Students have been notified.')
+        }
     })
 
     const handleGenerateAI = async () => {
@@ -134,6 +174,62 @@ export default function TeacherQuizzes() {
 
     return (
         <div className="animate-fade-in text-slate-700 p-4 lg:p-6">
+            {/* Review AI-Generated Questions */}
+            {generatedQuestions.length > 0 && (
+                <div className="mb-8 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="p-5 bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                        <h2 className="text-lg font-bold">📝 Review Generated Questions ({generatedQuestions.length})</h2>
+                        <p className="text-purple-100 text-sm mt-1">Review, set a title, and publish to your students</p>
+                    </div>
+                    <div className="p-5 border-b border-slate-100">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Quiz Title</label>
+                                <input type="text" value={quizTitle} onChange={e => setQuizTitle(e.target.value)} placeholder="e.g. Week 4 - Computer Parts" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-purple-500 text-sm bg-slate-50" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Subject</label>
+                                <select value={publishSubjectId} onChange={e => setPublishSubjectId(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-purple-500 text-sm bg-slate-50">
+                                    <option value="">Select subject</option>
+                                    {teacherSubjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Duration (mins)</label>
+                                <input type="number" value={quizDuration} onChange={e => setQuizDuration(parseInt(e.target.value))} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-purple-500 text-sm bg-slate-50" />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
+                        {generatedQuestions.map((q: any, i: number) => (
+                            <div key={i} className="p-4 hover:bg-slate-50 transition-colors">
+                                <div className="flex gap-3">
+                                    <span className="w-7 h-7 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-xs shrink-0">{i + 1}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-slate-800 text-sm mb-2">{q.text}</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mb-2">
+                                            {(q.options || []).map((opt: string, j: number) => (
+                                                <div key={j} className={`text-xs px-3 py-1.5 rounded-lg ${opt === q.correctAnswer ? 'bg-success-100 text-success-700 font-bold' : 'bg-slate-100 text-slate-600'}`}>
+                                                    {opt === q.correctAnswer && <CheckCircle2 className="w-3 h-3 inline mr-1" />}{opt}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {q.explanation && <p className="text-[11px] text-slate-400 italic">💡 {q.explanation}</p>}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="p-4 bg-slate-50 flex flex-col sm:flex-row gap-3">
+                        <button onClick={() => setGeneratedQuestions([])} className="flex-1 py-2.5 bg-slate-200 text-slate-600 rounded-xl font-semibold text-sm hover:bg-slate-300">Discard</button>
+                        <button onClick={() => publishMutation.mutate()} disabled={!quizTitle || !publishSubjectId || publishMutation.isPending}
+                            className="flex-1 py-2.5 bg-success-500 text-white rounded-xl font-semibold text-sm hover:bg-success-600 shadow-md flex items-center justify-center gap-2 disabled:opacity-50">
+                            {publishMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4" /> Publish Quiz</>}
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
                 <div className="page-header mb-0">
                     <h1 className="text-2xl font-bold text-slate-800">Quizzes</h1>

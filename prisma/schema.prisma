@@ -39,6 +39,7 @@ model User {
   notifications Notification[]
   announcements Announcement[] @relation("AuthoredAnnouncements")
   liveClasses   LiveClass[]    @relation("TeacherLiveClasses")
+  attendanceRecords Attendance[] @relation("StudentAttendance")
 }
 
 model Class {
@@ -49,6 +50,7 @@ model Class {
   classTeacher  User?     @relation("ClassTeacher", fields: [teacherId], references: [id])
   students      User[]    @relation("StudentClass")
   subjects      Subject[]
+  attendances   Attendance[]
   createdAt     DateTime  @default(now())
 }
 
@@ -178,4 +180,18 @@ model Notification {
   link      String?
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  studentId String
+  student   User     @relation("StudentAttendance", fields: [studentId], references: [id])
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id])
+  date      DateTime
+  status    String   @default("PRESENT") // PRESENT, ABSENT, LATE
+  markedById String?
+  createdAt DateTime @default(now())
+
+  @@unique([studentId, classId, date])
 }
