@@ -35,7 +35,7 @@ export default function AdminLayout({ user, onLogout }: AdminLayoutProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC]">
+        <div className="min-h-screen bg-[#F7F8FC]">
             <Sidebar
                 user={user}
                 portalLabel="Admin Portal"
@@ -44,17 +44,14 @@ export default function AdminLayout({ user, onLogout }: AdminLayoutProps) {
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
             />
-            <main className="lg:ml-[240px] flex flex-col min-h-screen transition-all duration-300">
-                <header className="h-[73px] flex items-center justify-between lg:justify-end px-4 lg:px-8 border-b border-slate-200 bg-white">
-                    <button
-                        onClick={() => setSidebarOpen(true)}
-                        className="p-2 -ml-2 rounded-lg hover:bg-slate-100 lg:hidden"
-                    >
-                        <Menu className="w-6 h-6 text-slate-600" />
+            <main className="lg:ml-[260px] flex flex-col min-h-screen transition-all duration-300">
+                <header className="h-[65px] flex items-center justify-between lg:justify-end px-4 lg:px-8 border-b border-slate-100 bg-white/80 backdrop-blur-xl sticky top-0 z-30">
+                    <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 rounded-xl hover:bg-slate-100 lg:hidden transition-colors">
+                        <Menu className="w-5 h-5 text-slate-600" />
                     </button>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                         <Notifications userId={user.id} />
-                        <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold border border-primary-200">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-white flex items-center justify-center font-bold text-sm shadow-md">
                             {user.name.charAt(0)}
                         </div>
                     </div>
@@ -66,3 +63,4 @@ export default function AdminLayout({ user, onLogout }: AdminLayoutProps) {
         </div>
     )
 }
+

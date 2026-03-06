@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, EyeOff, LogIn } from 'lucide-react'
+import { Eye, EyeOff, LogIn, Sparkles } from 'lucide-react'
 
 interface LoginProps {
     onLogin: (email: string, password: string) => void
@@ -21,88 +21,82 @@ export default function Login({ onLogin }: LoginProps) {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-primary-500 via-primary-600 to-primary-800 
-                    flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Background decoration */}
+        <div className="min-h-screen bg-[#0a1628] flex items-center justify-center p-4 relative overflow-hidden">
+            {/* Animated Background */}
             <div className="absolute inset-0">
-                <div className="absolute top-20 left-20 w-72 h-72 bg-white/5 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl"></div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary-400/5 rounded-full blur-3xl"></div>
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary-900/50 via-transparent to-purple-900/30" />
+                <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-primary-500/15 rounded-full blur-[120px] animate-float" />
+                <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-[120px] animate-float" style={{ animationDelay: '1.5s' }} />
+                <div className="absolute top-[40%] left-[60%] w-[300px] h-[300px] bg-sky-500/8 rounded-full blur-[100px]" />
+                {/* Grid pattern */}
+                <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
             </div>
 
-            <div className="relative z-10 w-full max-w-md">
+            <div className="relative z-10 w-full max-w-[420px]">
                 {/* Logo */}
-                <div className="text-center mb-8">
-                    <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl border-4 border-white/20 p-1.5 overflow-hidden">
-                        <img src="/badge.png" alt="UBaS Logo" className="w-full h-full object-contain hover:scale-105 transition-transform duration-300" />
+                <div className="text-center mb-10">
+                    <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-2xl shadow-primary-500/20 p-2 overflow-hidden hover:scale-105 transition-transform duration-300">
+                        <img src="/badge.png" alt="UBaS Logo" className="w-full h-full object-contain" />
                     </div>
-                    <h1 className="text-3xl font-bold text-white mb-1 drop-shadow-md">UBaS LMS</h1>
-                    <p className="text-white/80 font-medium text-sm drop-shadow">Learning Management System</p>
+                    <h1 className="text-3xl font-bold text-white mb-1.5 tracking-tight">UBaS LMS</h1>
+                    <p className="text-white/40 font-medium text-sm">Learning Management System</p>
                 </div>
 
                 {/* Login Card */}
-                <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-8 shadow-2xl">
-                    <h2 className="text-xl font-bold text-white mb-1">Welcome back</h2>
-                    <p className="text-white/50 text-sm mb-6">Sign in to your account</p>
+                <div className="bg-white/[0.07] backdrop-blur-2xl border border-white/[0.08] rounded-3xl p-8 shadow-2xl">
+                    <div className="flex items-center gap-2 mb-1">
+                        <h2 className="text-xl font-bold text-white">Welcome back</h2>
+                        <Sparkles className="w-5 h-5 text-amber-400" />
+                    </div>
+                    <p className="text-white/40 text-sm mb-7">Sign in to continue your learning journey</p>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
-                            <label className="block text-sm font-medium text-white/80 mb-1.5">Email Address</label>
+                            <label className="block text-[13px] font-semibold text-white/60 mb-2">Email Address</label>
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="you@example.com"
-                                className="w-full px-4 py-3 bg-white/10 border border-white/10 rounded-xl text-white 
-                           placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 
-                           focus:ring-white/30 focus:border-white/20 transition-all"
+                                className="w-full px-4 py-3.5 bg-white/[0.06] border border-white/[0.08] rounded-xl text-white 
+                           placeholder:text-white/20 text-sm focus:outline-none focus:ring-2 
+                           focus:ring-primary-400/40 focus:border-primary-400/30 focus:bg-white/[0.08] transition-all"
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-white/80 mb-1.5">Password</label>
+                            <label className="block text-[13px] font-semibold text-white/60 mb-2">Password</label>
                             <div className="relative">
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full px-4 py-3 bg-white/10 border border-white/10 rounded-xl text-white 
-                             placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 
-                             focus:ring-white/30 focus:border-white/20 transition-all pr-11"
+                                    className="w-full px-4 py-3.5 bg-white/[0.06] border border-white/[0.08] rounded-xl text-white 
+                             placeholder:text-white/20 text-sm focus:outline-none focus:ring-2 
+                             focus:ring-primary-400/40 focus:border-primary-400/30 focus:bg-white/[0.08] transition-all pr-12"
                                     required
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/40 hover:text-white/70 transition-colors"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                                 >
                                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                 </button>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-white/10" />
-                                <span className="text-sm text-white/60">Remember me</span>
-                            </label>
-                            <button type="button" className="text-sm text-white/60 hover:text-white transition-colors">
-                                Forgot password?
-                            </button>
-                        </div>
-
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full py-3 bg-white text-primary-600 font-semibold rounded-xl text-sm
-                         hover:bg-white/90 transition-all duration-200 flex items-center justify-center gap-2
-                         disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98]
-                         shadow-lg hover:shadow-xl"
+                            className="w-full py-3.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-bold rounded-xl text-sm
+                         hover:from-primary-600 hover:to-primary-700 transition-all duration-300 flex items-center justify-center gap-2
+                         disabled:opacity-60 active:scale-[0.98] shadow-xl shadow-primary-500/30 hover:shadow-primary-500/40"
                         >
                             {isLoading ? (
-                                <div className="w-5 h-5 border-2 border-primary-400 border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                             ) : (
                                 <>
                                     <LogIn className="w-4 h-4" />
@@ -112,31 +106,16 @@ export default function Login({ onLogin }: LoginProps) {
                         </button>
                     </form>
 
-                    {/* Demo Credentials */}
-                    <div className="mt-6 pt-5 border-t border-white/10">
-                        <p className="text-xs text-white/40 text-center mb-3">Demo Accounts (click to fill)</p>
-                        <div className="grid grid-cols-3 gap-2">
-                            {[
-                                { label: 'Admin', email: 'admin@ubas.edu' },
-                                { label: 'Teacher', email: 'teacher@ubas.edu' },
-                                { label: 'Student', email: 'student@ubas.edu' },
-                            ].map((demo) => (
-                                <button
-                                    key={demo.label}
-                                    type="button"
-                                    onClick={() => { setEmail(demo.email); setPassword('password123') }}
-                                    className="py-2 px-3 bg-white/5 border border-white/10 rounded-lg text-xs font-medium 
-                             text-white/60 hover:bg-white/10 hover:text-white/80 transition-all"
-                                >
-                                    {demo.label}
-                                </button>
-                            ))}
-                        </div>
+                    {/* Footer Info */}
+                    <div className="mt-7 pt-6 border-t border-white/[0.06]">
+                        <p className="text-[11px] text-white/25 text-center leading-relaxed">
+                            Don't have an account? Please contact the IT Department or your School Administrator to request access credentials.
+                        </p>
                     </div>
                 </div>
 
-                <p className="text-center text-white/30 text-xs mt-6">
-                    © 2026 UBaS LMS. All rights reserved.
+                <p className="text-center text-white/15 text-[11px] mt-6">
+                    © 2026 UBaS LMS • Powered by SchoolTech
                 </p>
             </div>
         </div>
