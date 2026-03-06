@@ -18,12 +18,14 @@ import TeacherLessons from './pages/teacher/Lessons'
 import TeacherAssignments from './pages/teacher/Assignments'
 import TeacherQuizzes from './pages/teacher/Quizzes'
 import TeacherLiveClasses from './pages/teacher/LiveClasses'
+import TeacherResources from './pages/teacher/Resources'
 import StudentDashboard from './pages/student/Dashboard'
 import Messages from './pages/Messages'
 import StudentSubjects from './pages/student/MySubjects'
 import StudentAssignments from './pages/student/Assignments'
 import StudentLiveClasses from './pages/student/LiveClasses'
 import StudentGrades from './pages/student/Grades'
+import StudentResources from './pages/student/Resources'
 import Profile from './pages/Profile'
 import StudentQuizzes from './pages/student/Quizzes'
 
@@ -101,6 +103,7 @@ function App() {
                     <Route path="assignments" element={<TeacherAssignments user={user} />} />
                     <Route path="quizzes" element={<TeacherQuizzes />} />
                     <Route path="live-classes" element={<TeacherLiveClasses user={user} />} />
+                    <Route path="resources" element={<TeacherResources user={user} />} />
                     <Route path="profile" element={<Profile user={user} onUpdateUser={handleUpdateUser} />} />
                 </Route>
             )}
@@ -115,6 +118,7 @@ function App() {
                     <Route path="live-classes" element={<StudentLiveClasses user={user} />} />
                     <Route path="quizzes" element={<StudentQuizzes user={user} />} />
                     <Route path="grades" element={<StudentGrades user={user} />} />
+                    <Route path="resources" element={<StudentResources user={user} />} />
                     <Route path="profile" element={<Profile user={user} onUpdateUser={handleUpdateUser} />} />
                 </Route>
             )}

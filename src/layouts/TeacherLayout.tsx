@@ -11,6 +11,7 @@ import {
     ClipboardList,
     Trophy,
     Video,
+    FolderOpen,
     Menu,
 } from 'lucide-react'
 import Notifications from '../components/Notifications'
@@ -29,6 +30,7 @@ const teacherNavItems = [
     { label: 'Assignments', path: '/assignments', icon: ClipboardList },
     { label: 'Quizzes', path: '/quizzes', icon: Trophy, hasSubmenu: true },
     { label: 'Live Classes', path: '/live-classes', icon: Video },
+    { label: 'Resources', path: '/resources', icon: FolderOpen },
 ]
 
 export default function TeacherLayout({ user, onLogout }: TeacherLayoutProps) {

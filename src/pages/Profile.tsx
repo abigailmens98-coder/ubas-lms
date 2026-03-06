@@ -31,7 +31,7 @@ export default function Profile({ user, onUpdateUser }: { user: any, onUpdateUse
 
     const passwordMutation = useMutation({
         mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
-            const res = await fetch(`/api/users/${user.id}/password`, {
+            const res = await fetch(`/api/users/${user.id}/change-password`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

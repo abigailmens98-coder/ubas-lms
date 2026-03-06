@@ -112,29 +112,63 @@ body {
 
 /* ===== ANIMATIONS ===== */
 @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-6px); }
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-6px);
+    }
 }
 
 @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(19, 133, 197, 0.3); }
-    50% { box-shadow: 0 0 0 8px rgba(19, 133, 197, 0); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(19, 133, 197, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(19, 133, 197, 0);
+    }
 }
 
 @keyframes slide-up {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes gradient-shift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 .skeleton {
@@ -188,4 +222,77 @@ body {
 
 .sidebar-item {
     position: relative;
+}
+
+/* ===== DARK MODE ===== */
+.dark body,
+.dark .min-h-screen {
+    background-color: #0f172a !important;
+    color: #e2e8f0;
+}
+
+.dark .bg-white,
+.dark .bg-white\/80,
+.dark .bg-white\/95 {
+    background-color: #1e293b !important;
+}
+
+.dark .bg-\[#F7F8FC\] {
+    background-color: #0f172a !important;
+}
+
+.dark .border-slate-100,
+.dark .border-slate-100\/80,
+.dark .border-slate-200 {
+    border-color: #334155 !important;
+}
+
+.dark .text-slate-800,
+.dark .text-slate-700 {
+    color: #e2e8f0 !important;
+}
+
+.dark .text-slate-500,
+.dark .text-slate-400 {
+    color: #94a3b8 !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+    background-color: #1e293b !important;
+}
+
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-100:hover {
+    background-color: #334155 !important;
+}
+
+.dark .input-field {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+.dark .content-card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+.dark .shadow-sm,
+.dark .shadow-card {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3) !important;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+.dark .btn-outline {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+    color: #cbd5e1 !important;
 }

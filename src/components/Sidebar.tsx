@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom'
-import { LucideIcon, ChevronRight, LogOut, User } from 'lucide-react'
+import { LucideIcon, ChevronRight, LogOut, User, Moon, Sun } from 'lucide-react'
 import { clsx } from 'clsx'
 import { User as UserType } from '../App'
+import { useTheme } from '../context/ThemeContext'
 
 interface NavItem {
     label: string
@@ -20,6 +21,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ user, portalLabel, navItems, onLogout, isOpen = false, onClose }: SidebarProps) {
+    const { dark, toggle } = useTheme()
     return (
         <>
             {isOpen && (
@@ -30,8 +32,9 @@ export default function Sidebar({ user, portalLabel, navItems, onLogout, isOpen 
             )}
 
             <aside className={clsx(
-                "fixed left-0 top-0 bottom-0 w-[260px] bg-white/95 backdrop-blur-xl border-r border-slate-100 flex flex-col z-50 transition-transform duration-300 lg:translate-x-0",
-                isOpen ? "translate-x-0" : "-translate-x-full"
+                "fixed left-0 top-0 bottom-0 w-[260px] backdrop-blur-xl border-r flex flex-col z-50 transition-all duration-300 lg:translate-x-0",
+                isOpen ? "translate-x-0" : "-translate-x-full",
+                dark ? "bg-slate-900/95 border-slate-800" : "bg-white/95 border-slate-100"
             )}>
                 {/* Logo Area */}
                 <div className="px-5 pt-6 pb-5">
@@ -91,14 +94,18 @@ export default function Sidebar({ user, portalLabel, navItems, onLogout, isOpen 
 
                     {/* Action Links */}
                     <div className="mt-2 space-y-0.5">
-                        <NavLink to="/profile" onClick={onClose} className={({ isActive }) => clsx('sidebar-item w-full text-left', isActive ? 'sidebar-item-active' : 'text-slate-500')}>
+                        {/* Dark Mode Toggle */}
+                        <button onClick={toggle}
+                            className={clsx('sidebar-item w-full text-left', dark ? 'text-slate-400 hover:text-amber-400 hover:bg-slate-800' : 'text-slate-500')}>
+                            {dark ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
+                            <span>{dark ? 'Light Mode' : 'Dark Mode'}</span>
+                        </button>
+                        <NavLink to="/profile" onClick={onClose} className={({ isActive }) => clsx('sidebar-item w-full text-left', isActive ? 'sidebar-item-active' : dark ? 'text-slate-400' : 'text-slate-500')}>
                             <User className="w-[18px] h-[18px]" />
                             <span>Profile</span>
                         </NavLink>
-                        <button
-                            onClick={onLogout}
-                            className="sidebar-item w-full text-left text-slate-500 hover:text-danger-600 hover:bg-danger-50"
-                        >
+                        <button onClick={onLogout}
+                            className={clsx('sidebar-item w-full text-left hover:text-danger-600 hover:bg-danger-50', dark ? 'text-slate-400' : 'text-slate-500')}>
                             <LogOut className="w-[18px] h-[18px]" />
                             <span>Log Out</span>
                         </button>

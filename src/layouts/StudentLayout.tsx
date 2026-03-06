@@ -12,6 +12,7 @@ import {
     Bell,
     Menu,
     Trophy,
+    FolderOpen,
 } from 'lucide-react'
 import Notifications from '../components/Notifications'
 
@@ -28,6 +29,7 @@ const studentNavItems = [
     { label: 'Quizzes', path: '/quizzes', icon: Trophy },
     { label: 'Live Classes', path: '/live-classes', icon: Video },
     { label: 'Grades', path: '/grades', icon: Award },
+    { label: 'Resources', path: '/resources', icon: FolderOpen },
 ]
 
 export default function StudentLayout({ user, onLogout }: StudentLayoutProps) {

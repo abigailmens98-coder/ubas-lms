@@ -1138,6 +1138,192 @@ app.get('/api/dashboard/:role/:userId', async (req, res) => {
     }
 });
 
+// ==========================================
+// RESOURCE LIBRARY
+// ==========================================
+
+// Get all resources (optionally filter by subjectId)
+app.get('/api/resources', async (req, res) => {
+    const { subjectId } = req.query;
+    try {
+        const where = subjectId ? { subjectId } : {};
+        const resources = await prisma.resource.findMany({
+            where,
+            include: {
+                subject: { select: { name: true, code: true, color: true } },
+                uploadedBy: { select: { name: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(resources);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch resources' });
+    }
+});
+
+// Create resource
+app.post('/api/resources', async (req, res) => {
+    const { title, description, type, fileUrl, subjectId, uploadedById } = req.body;
+    try {
+        const resource = await prisma.resource.create({
+            data: { title, description, type, fileUrl, subjectId, uploadedById },
+            include: { subject: { select: { name: true } }, uploadedBy: { select: { name: true } } }
+        });
+        res.status(201).json(resource);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to create resource' });
+    }
+});
+
+// Delete resource
+app.delete('/api/resources/:id', async (req, res) => {
+    try {
+        await prisma.resource.delete({ where: { id: req.params.id } });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete resource' });
+    }
+});
+
+// ==========================================
+// PASSWORD RESET
+// ==========================================
+
+// Admin reset user password
+app.patch('/api/users/:id/reset-password', async (req, res) => {
+    const { newPassword } = req.body;
+    try {
+        await prisma.user.update({
+            where: { id: req.params.id },
+            data: { password: newPassword || 'password123' }
+        });
+        res.json({ success: true, message: 'Password reset successfully' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to reset password' });
+    }
+});
+
+// Self-service password change (user must know current password)
+app.patch('/api/users/:id/change-password', async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    try {
+        const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+        if (!user || user.password !== currentPassword) {
+            return res.status(400).json({ error: 'Current password is incorrect' });
+        }
+        await prisma.user.update({
+            where: { id: req.params.id },
+            data: { password: newPassword }
+        });
+        res.json({ success: true, message: 'Password changed successfully' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to change password' });
+    }
+});
+
+// Forgot password — admin-assisted (look up by email, return user info)
+app.post('/api/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    try {
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) return res.status(404).json({ error: 'No account found with this email' });
+        // In production: send reset email. For now: notify admin
+        res.json({ success: true, message: 'A password reset request has been sent to the administrator. Please contact your school admin.' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to process request' });
+    }
+});
+
+// ==========================================
+// ADMIN ANALYTICS
+// ==========================================
+
+app.get('/api/analytics/admin', async (req, res) => {
+    try {
+        // Enrollment by role
+        const [totalStudents, totalTeachers, totalAdmins] = await Promise.all([
+            prisma.user.count({ where: { role: 'STUDENT' } }),
+            prisma.user.count({ where: { role: 'TEACHER' } }),
+            prisma.user.count({ where: { role: 'ADMIN' } }),
+        ]);
+
+        // Students per class
+        const classes = await prisma.class.findMany({
+            select: { name: true, section: true, _count: { select: { students: true } } }
+        });
+        const classDistribution = classes.map(c => ({
+            name: `${c.name} ${c.section}`,
+            students: c._count.students
+        }));
+
+        // Quiz stats
+        const quizAttempts = await prisma.quizAttempt.findMany({
+            select: { score: true, maxScore: true }
+        });
+        const gradeRanges = { 'A (80-100)': 0, 'B (70-79)': 0, 'C (60-69)': 0, 'D (50-59)': 0, 'F (0-49)': 0 };
+        quizAttempts.forEach(a => {
+            const pct = (a.score / a.maxScore) * 100;
+            if (pct >= 80) gradeRanges['A (80-100)']++;
+            else if (pct >= 70) gradeRanges['B (70-79)']++;
+            else if (pct >= 60) gradeRanges['C (60-69)']++;
+            else if (pct >= 50) gradeRanges['D (50-59)']++;
+            else gradeRanges['F (0-49)']++;
+        });
+        const gradeDistribution = Object.entries(gradeRanges).map(([grade, count]) => ({ grade, count }));
+
+        // Teacher activity (subjects taught + quiz count)
+        const teachers = await prisma.user.findMany({
+            where: { role: 'TEACHER' },
+            select: {
+                name: true,
+                taughtSubjects: { select: { name: true, _count: { select: { quizzes: true, assignments: true, resources: true } } } }
+            }
+        });
+        const teacherActivity = teachers.map(t => ({
+            name: t.name,
+            subjects: t.taughtSubjects.length,
+            quizzes: t.taughtSubjects.reduce((s, sub) => s + sub._count.quizzes, 0),
+            assignments: t.taughtSubjects.reduce((s, sub) => s + sub._count.assignments, 0),
+            resources: t.taughtSubjects.reduce((s, sub) => s + sub._count.resources, 0),
+        }));
+
+        // Recent signups (last 30 days by day)
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const recentUsers = await prisma.user.findMany({
+            where: { createdAt: { gte: thirtyDaysAgo } },
+            select: { createdAt: true },
+            orderBy: { createdAt: 'asc' }
+        });
+        const signupsByDay = {};
+        recentUsers.forEach(u => {
+            const day = u.createdAt.toISOString().split('T')[0];
+            signupsByDay[day] = (signupsByDay[day] || 0) + 1;
+        });
+        const enrollmentTrend = Object.entries(signupsByDay).map(([date, count]) => ({ date: date.slice(5), count }));
+
+        // Totals
+        const [totalQuizzes, totalAssignments, totalResources, totalMessages] = await Promise.all([
+            prisma.quiz.count(),
+            prisma.assignment.count(),
+            prisma.resource.count(),
+            prisma.message.count(),
+        ]);
+
+        res.json({
+            totalStudents, totalTeachers, totalAdmins,
+            classDistribution, gradeDistribution, teacherActivity,
+            enrollmentTrend,
+            totalQuizzes, totalAssignments, totalResources, totalMessages,
+            totalQuizAttempts: quizAttempts.length
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+});
+
 // --- Serve React App ---
 const distPath = path.join(__dirname, '../dist')
 app.use(express.static(distPath))
