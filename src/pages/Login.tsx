@@ -146,7 +146,7 @@ export default function Login({ onLogin }: LoginProps) {
                 )}
 
                 <p className="text-center text-white/15 text-[11px] mt-6">
-                    © 2026 UBaS LMS • Powered by SchoolTech
+                    © 2026 UBaS LMS • Powered by B&P Code Lab | 0242099920 | b&pcode@gmail.com
                 </p>
             </div>
         </div>
