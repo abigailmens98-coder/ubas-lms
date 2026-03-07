@@ -55,6 +55,9 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password' })
         }
 
+        // Update lastSeen on login
+        await prisma.user.update({ where: { id: user.id }, data: { lastSeen: new Date() } })
+
         // Return user info (excluding password in real apps)
         const { password: _, ...userInfo } = user
         userInfo.role = userInfo.role.toLowerCase()
@@ -63,6 +66,14 @@ app.post('/api/login', async (req, res) => {
         console.error('Login error:', error)
         res.status(500).json({ message: 'Internal server error' })
     }
+})
+
+// Heartbeat — update lastSeen periodically
+app.patch('/api/users/:id/heartbeat', async (req, res) => {
+    try {
+        await prisma.user.update({ where: { id: req.params.id }, data: { lastSeen: new Date() } })
+        res.json({ success: true })
+    } catch { res.status(500).json({ error: 'Failed' }) }
 })
 
 // --- Stats Routes ---
@@ -702,24 +713,24 @@ app.get('/api/users/contacts/:userId', async (req, res) => {
         if (user.role === 'ADMIN') {
             contacts = await prisma.user.findMany({
                 where: { id: { not: user.id } },
-                select: { id: true, name: true, role: true, avatar: true }
+                select: { id: true, name: true, role: true, avatar: true, lastSeen: true }
             });
         } else if (user.role === 'TEACHER') {
             contacts = await prisma.user.findMany({
                 where: { role: { in: ['STUDENT', 'ADMIN'] }, id: { not: user.id } },
-                select: { id: true, name: true, role: true, avatar: true }
+                select: { id: true, name: true, role: true, avatar: true, lastSeen: true }
             });
         } else {
             // Teachers + Admin + Classmates
             const teachersAndAdmin = await prisma.user.findMany({
                 where: { role: { in: ['TEACHER', 'ADMIN'] }, id: { not: user.id } },
-                select: { id: true, name: true, role: true, avatar: true }
+                select: { id: true, name: true, role: true, avatar: true, lastSeen: true }
             });
             let classmates = [];
             if (user.classId) {
                 classmates = await prisma.user.findMany({
                     where: { classId: user.classId, id: { not: user.id }, role: 'STUDENT' },
-                    select: { id: true, name: true, role: true, avatar: true }
+                    select: { id: true, name: true, role: true, avatar: true, lastSeen: true }
                 });
             }
             contacts = [...teachersAndAdmin, ...classmates];

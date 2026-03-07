@@ -63,6 +63,30 @@ export default function Messages({ user }: { user: any }) {
         return () => document.removeEventListener('mousedown', handler)
     }, [])
 
+    // Heartbeat — update lastSeen every 30 seconds
+    useEffect(() => {
+        const ping = () => fetch(`/api/users/${user.id}/heartbeat`, { method: 'PATCH' }).catch(() => { })
+        ping()
+        const interval = setInterval(ping, 30000)
+        return () => clearInterval(interval)
+    }, [user.id])
+
+    const getLastSeen = (lastSeen: string | null) => {
+        if (!lastSeen) return 'Offline'
+        const diff = Date.now() - new Date(lastSeen).getTime()
+        const mins = Math.floor(diff / 60000)
+        if (mins < 2) return 'Online'
+        if (mins < 60) return `${mins} min ago`
+        const hours = Math.floor(mins / 60)
+        if (hours < 24) return `${hours}h ago`
+        return new Date(lastSeen).toLocaleDateString()
+    }
+
+    const isOnline = (lastSeen: string | null) => {
+        if (!lastSeen) return false
+        return (Date.now() - new Date(lastSeen).getTime()) < 120000
+    }
+
     const handleSend = (e: React.FormEvent) => {
         e.preventDefault()
         if (!newMessage.trim() || !selectedContact) return
@@ -122,12 +146,13 @@ export default function Messages({ user }: { user: any }) {
                                             className={`w-full p-3.5 px-4 flex items-center gap-3 text-left transition-colors border-b border-slate-100/60
                                             ${selectedContact?.id === contact.id ? 'bg-primary-50 border-l-4 border-l-primary-500' : 'hover:bg-slate-100/80'}`}
                                         >
-                                            <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+                                            <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative">
                                                 {contact.avatar ? <img src={contact.avatar} className="w-full h-full object-cover" /> : contact.name.charAt(0)}
+                                                {isOnline(contact.lastSeen) && <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white" />}
                                             </div>
                                             <div className="min-w-0">
                                                 <p className="font-semibold text-slate-800 text-sm truncate">{contact.name}</p>
-                                                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wide">{contact.role}</p>
+                                                <p className="text-[10px] text-slate-400 font-medium">{getLastSeen(contact.lastSeen)}</p>
                                             </div>
                                         </button>
                                     ))}
@@ -147,12 +172,13 @@ export default function Messages({ user }: { user: any }) {
                             <button onClick={() => { setShowContacts(true); setSelectedContact(null) }} className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100">
                                 <ArrowLeft className="w-5 h-5 text-slate-600" />
                             </button>
-                            <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+                            <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative">
                                 {selectedContact.avatar ? <img src={selectedContact.avatar} className="w-full h-full object-cover" /> : selectedContact.name.charAt(0)}
+                                {isOnline(selectedContact.lastSeen) && <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white" />}
                             </div>
                             <div>
                                 <h3 className="font-bold text-slate-800">{selectedContact.name}</h3>
-                                <p className="text-xs text-slate-500 uppercase">{selectedContact.role}</p>
+                                <p className={`text-xs ${isOnline(selectedContact.lastSeen) ? 'text-emerald-500 font-semibold' : 'text-slate-400'}`}>{getLastSeen(selectedContact.lastSeen)}</p>
                             </div>
                         </div>
 
