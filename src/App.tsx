@@ -9,7 +9,6 @@ import AdminUsers from './pages/admin/Users'
 import AdminClasses from './pages/admin/Classes'
 import AdminSubjects from './pages/admin/Subjects'
 import AdminTerms from './pages/admin/Terms'
-import AdminTimetable from './pages/admin/Timetable'
 import AdminAnnouncements from './pages/admin/Announcements'
 import TeacherDashboard from './pages/teacher/Dashboard'
 import TeacherSubjects from './pages/teacher/MySubjects'
@@ -86,7 +85,6 @@ function App() {
                     <Route path="classes" element={<AdminClasses />} />
                     <Route path="subjects" element={<AdminSubjects />} />
                     <Route path="terms" element={<AdminTerms />} />
-                    <Route path="timetable" element={<AdminTimetable />} />
                     <Route path="announcements" element={<AdminAnnouncements user={user} />} />
                     <Route path="profile" element={<Profile user={user} onUpdateUser={handleUpdateUser} />} />
                 </Route>

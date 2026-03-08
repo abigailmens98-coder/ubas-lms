@@ -158,7 +158,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "YOUR_GEMINI_
 app.get('/api/users', async (req, res) => {
     try {
         const users = await prisma.user.findMany({
-            include: { class: { select: { name: true, section: true } } },
+            include: { class: { select: { name: true, section: true } }, managedClasses: { select: { id: true, name: true, section: true } } },
             orderBy: { createdAt: 'desc' }
         })
         const formattedUsers = users.map(u => ({ ...u, role: u.role.toLowerCase() }))
@@ -608,17 +608,24 @@ app.post('/api/register', async (req, res) => {
 
 // --- Edit User (role, class, subjects) ---
 app.patch('/api/users/:id/edit', async (req, res) => {
-    const { role, classId, name } = req.body;
+    const { role, classId, classIds, name } = req.body;
     try {
         const updateData = {};
         if (role) updateData.role = role.toUpperCase();
         if (name) updateData.name = name;
         if (classId !== undefined) updateData.classId = classId || null;
 
+        // Handle multi-class assignment for teachers/admins
+        if (classIds && Array.isArray(classIds)) {
+            updateData.managedClasses = {
+                set: classIds.map(id => ({ id }))
+            };
+        }
+
         const user = await prisma.user.update({
             where: { id: req.params.id },
             data: updateData,
-            include: { class: { select: { name: true, section: true } } }
+            include: { class: { select: { name: true, section: true } }, managedClasses: { select: { id: true, name: true, section: true } } }
         });
         res.json(user);
     } catch (error) {

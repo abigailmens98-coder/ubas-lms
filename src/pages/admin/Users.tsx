@@ -12,6 +12,7 @@ interface UserItem {
     role: UserRole
     classId?: string
     class?: { name: string; section: string }
+    managedClasses?: { id: string; name: string; section: string }[]
 }
 
 interface ClassItem {
@@ -54,7 +55,7 @@ export default function AdminUsers() {
     const [inviteLink, setInviteLink] = useState('')
     const [linkCopied, setLinkCopied] = useState(false)
     const [inviteLinkForm, setInviteLinkForm] = useState({ role: 'student', classId: '' })
-    const [editForm, setEditForm] = useState({ name: '', role: '', classId: '' })
+    const [editForm, setEditForm] = useState<{ name: string; role: string; classId: string; classIds: string[] }>({ name: '', role: '', classId: '', classIds: [] })
     const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
 
     // New User Form State
@@ -220,8 +221,9 @@ export default function AdminUsers() {
         }
     }
 
-    const openEditModal = (user: UserItem) => {
-        setEditForm({ name: user.name, role: user.role, classId: user.classId || '' })
+    const openEditModal = (user: any) => {
+        const managedIds = (user.managedClasses || []).map((c: any) => c.id)
+        setEditForm({ name: user.name, role: user.role, classId: user.classId || '', classIds: managedIds.length > 0 ? managedIds : (user.classId ? [user.classId] : []) })
         setShowEditModal(user)
     }
 
@@ -300,12 +302,22 @@ export default function AdminUsers() {
                                                 {user.class ? `${user.class.name} ${user.class.section}` : 'Assign Class'}
                                             </button>
                                         )}
-                                        {user.role === 'teacher' && (
-                                            <button onClick={() => openSubjectsModal(user)}
-                                                className="text-[10px] flex items-center gap-1 text-purple-600 font-medium hover:underline">
-                                                <BookOpen className="w-3 h-3" />
-                                                {subjects.filter((s: any) => s.teacherId === user.id).length} subjects
-                                            </button>
+                                        {(user.role === 'teacher' || user.role === 'admin') && (
+                                            <div className="flex flex-wrap gap-2">
+                                                {user.managedClasses && user.managedClasses.length > 0 ? (
+                                                    <span className="text-[10px] flex items-center gap-1 text-emerald-600 font-medium">
+                                                        <GraduationCap className="w-3 h-3" />
+                                                        {user.managedClasses.map((c: any) => `${c.name}${c.section}`).join(', ')}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] text-slate-400 italic">No classes assigned</span>
+                                                )}
+                                                <button onClick={() => openSubjectsModal(user)}
+                                                    className="text-[10px] flex items-center gap-1 text-purple-600 font-medium hover:underline">
+                                                    <BookOpen className="w-3 h-3" />
+                                                    {subjects.filter((s: any) => s.teacherId === user.id).length} subjects
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -350,20 +362,52 @@ export default function AdminUsers() {
                                     <option value="admin">Admin</option>
                                 </select>
                             </div>
-                            {(editForm.role === 'student') && (
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-600 mb-1.5">Class</label>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                                    {editForm.role === 'student' ? 'Assign Class' : 'Assign Classes'}
+                                </label>
+                                {editForm.role === 'student' ? (
                                     <select value={editForm.classId} onChange={e => setEditForm({ ...editForm, classId: e.target.value })}
                                         className="input-field shadow-none">
                                         <option value="">No class</option>
                                         {classes.map(c => <option key={c.id} value={c.id}>{c.name} {c.section}</option>)}
                                     </select>
-                                </div>
-                            )}
+                                ) : (
+                                    <div className="space-y-1.5 max-h-[200px] overflow-y-auto border border-slate-200 rounded-xl p-3 bg-slate-50">
+                                        {classes.length === 0 && <p className="text-xs text-slate-400">No classes available</p>}
+                                        {classes.map(c => {
+                                            const isChecked = (editForm.classIds || []).includes(c.id)
+                                            return (
+                                                <label key={c.id} className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${isChecked ? 'bg-primary-50 border border-primary-200' : 'hover:bg-slate-100 border border-transparent'}`}>
+                                                    <input type="checkbox" checked={isChecked}
+                                                        onChange={() => {
+                                                            const ids = editForm.classIds || []
+                                                            if (isChecked) {
+                                                                setEditForm({ ...editForm, classIds: ids.filter((id: string) => id !== c.id) })
+                                                            } else {
+                                                                setEditForm({ ...editForm, classIds: [...ids, c.id] })
+                                                            }
+                                                        }}
+                                                        className="accent-primary-500 w-4 h-4" />
+                                                    <span className="text-sm font-medium text-slate-700">{c.name} {c.section}</span>
+                                                </label>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <div className="flex gap-3 mt-6">
                             <button onClick={() => setShowEditModal(null)} className="btn-outline flex-1 justify-center">Cancel</button>
-                            <button onClick={() => editMutation.mutate({ userId: showEditModal.id, data: editForm })}
+                            <button onClick={() => {
+                                const payload = { ...editForm }
+                                if (payload.role === 'student') {
+                                    payload.classIds = [] // Clear managed classes
+                                } else {
+                                    payload.classId = '' // Clear student class
+                                }
+                                editMutation.mutate({ userId: showEditModal.id, data: payload })
+                            }}
                                 disabled={editMutation.isPending}
                                 className="btn-success flex-1 justify-center disabled:opacity-50">
                                 {editMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}

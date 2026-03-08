@@ -9,7 +9,6 @@ import {
     GraduationCap,
     BookOpen,
     CalendarDays,
-    CalendarClock,
     Bell,
     Menu,
 } from 'lucide-react'
@@ -27,7 +26,6 @@ const adminNavItems = [
     { label: 'Classes', path: '/classes', icon: GraduationCap },
     { label: 'Subjects', path: '/subjects', icon: BookOpen },
     { label: 'Terms', path: '/terms', icon: CalendarDays },
-    { label: 'Timetable', path: '/timetable', icon: CalendarClock },
     { label: 'Announcements', path: '/announcements', icon: Bell },
 ]
 
